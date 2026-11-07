@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>เครื่องมือวิเคราะห์ Correlation และ Multiple Regression</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f3f5f2;--card:#fff;--ink:#1b2622;--mute:#5d6b65;--line:#cfd8d3;--acc:#0d6b5c;--acc-ink:#fff;--head:#e4ece8;--warn:#b3261e}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141a18;--card:#1c2421;--ink:#e6ede9;--mute:#9db0a8;--line:#34423c;--acc:#3fb6a0;--acc-ink:#0b1512;--head:#26332e;--warn:#ff8a80}}
+:root[data-theme="dark"]{--bg:#141a18;--card:#1c2421;--ink:#e6ede9;--mute:#9db0a8;--line:#34423c;--acc:#3fb6a0;--acc-ink:#0b1512;--head:#26332e;--warn:#ff8a80}
+html{color-scheme:light dark;scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 'Sarabun',system-ui,sans-serif}
+main{max-width:1100px;margin:0 auto;padding:20px 14px 60px}
+h1{font-size:1.6rem;margin:.2em 0 .1em}h2{font-size:1.15rem;margin:1.4em 0 .4em}
+.sub{color:var(--mute);margin:0 0 18px}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.langs{display:flex;gap:6px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:16px}
+.modes{display:flex;gap:8px;flex-wrap:wrap}
+button,select,input[type=file]{font:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:6px}
+button:hover{border-color:var(--acc)}button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+button.on{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:600}
+button.go{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:700;padding:10px 24px}
+button.danger{color:var(--warn)}
+button.sm{padding:5px 12px;font-size:.9rem}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.wrap{overflow-x:auto;max-width:100%}
+table.in{border-collapse:collapse;min-width:100%}
+table.in th,table.in td{border:1px solid var(--line);padding:0}
+table.in th{background:var(--head)}
+table.in input{width:100%;min-width:90px;border:0;background:transparent;color:var(--ink);font:inherit;padding:7px 8px}
+table.in th input{font-weight:700;text-align:center}
+table.in td.n{padding:0 8px;color:var(--mute);text-align:center;width:36px}
+.x{border:0;background:none;color:var(--warn);padding:0 6px;font-size:1.1rem}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+#out{background:var(--card);padding:18px;border-radius:8px;border:1px solid var(--line)}
+#out h2{margin-top:1.2em}#out h2:first-child{margin-top:0}
+table.spss{border-collapse:collapse;margin:6px 0 10px;font-size:.93rem}
+table.spss th,table.spss td{border:1px solid var(--line);padding:4px 10px;text-align:right;white-space:nowrap}
+table.spss th{background:var(--head);text-align:center}
+table.spss td.l{text-align:left}
+.blk{margin-bottom:22px}
+.cap{font-weight:700;margin-top:12px}
+.note{font-size:.85rem;color:var(--mute);margin:0 0 10px}
+details.gl{border:1px solid var(--line);border-radius:6px;padding:6px 12px;margin:6px 0 4px;font-size:.88rem;background:color-mix(in srgb,var(--head) 40%,transparent)}
+details.gl summary{cursor:pointer;font-weight:600;color:var(--acc)}
+details.gl ul{margin:6px 0 4px;padding-left:18px}details.gl li{margin:3px 0}
+.eq{background:var(--head);padding:10px 14px;border-radius:6px;font-family:'Sarabun',serif;overflow-x:auto}
+.txt p{margin:.4em 0}
+.chart{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:16px}
+.chart .bar{justify-content:space-between;margin-top:0}
+canvas{max-width:100%;height:auto;display:block;border-radius:4px}
+#msg{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:6px;display:none;z-index:5}
+.err{color:var(--warn);font-weight:600}
+</style>
+</head>
+<body>
+<main>
+<div class="top">
+  <div><h1 data-i18n="title"></h1><p class="sub" data-i18n="sub"></p></div>
+  <div class="langs" role="group" aria-label="Language / ภาษา">
+    <button id="lTH" onclick="setLang('th')">ไทย</button>
+    <button id="lEN" onclick="setLang('en')">English</button>
+  </div>
+</div>
+
+<div class="card">
+  <b data-i18n="s1"></b>
+  <div class="modes" style="margin-top:8px">
+    <button id="mC" class="on" onclick="setMode('corr')" data-i18n="mC"></button>
+    <button id="mR" onclick="setMode('reg')" data-i18n="mR"></button>
+  </div>
+  <div id="cmBox" style="margin-top:12px">
+    <div class="bar" style="margin:0 0 4px"><span data-i18n="cmLbl"></span>
+      <button id="cmP" class="on" onclick="setCM('pearson')">Pearson Correlation (r)</button>
+      <button id="cmS" onclick="setCM('spearman')">Spearman Rank Correlation (rho)</button>
+      <button id="cmK" onclick="setCM('kendall')">Kendall's Tau</button>
+    </div>
+    <p class="note" id="cmHint" style="margin:0"></p>
+  </div>
+  <div id="depBox" class="bar" style="display:none">
+    <label for="dep" data-i18n="dep"></label><select id="dep"></select>
+    <span style="color:var(--mute)" data-i18n="depHint"></span>
+  </div>
+</div>
+
+<div class="card">
+  <b data-i18n="s2"></b> <span style="color:var(--mute)" data-i18n="s2hint"></span>
+  <div class="bar">
+    <button onclick="addCol()" data-i18n="addCol"></button>
+    <button onclick="addRow()" data-i18n="addRow"></button>
+    <button onclick="loadSample()" data-i18n="sample"></button>
+    <label><span data-i18n="fileLbl"></span> <input type="file" id="file" accept=".xlsx,.xls,.csv"></label>
+  </div>
+  <div class="wrap"><table class="in" id="tbl"></table></div>
+  <div class="bar" style="margin-top:14px">
+    <button class="go" onclick="run()" data-i18n="run"></button>
+    <button class="danger" onclick="resetAll()" data-i18n="reset"></button>
+  </div>
+  <p class="note" style="margin:0" data-i18n="pasteNote"></p>
+</div>
+
+<div id="res" style="display:none">
+  <div class="tabs">
+    <button id="vT" class="on" onclick="setView('table')" data-i18n="viewT"></button>
+    <button id="vC" onclick="setView('chart')" data-i18n="viewC"></button>
+  </div>
+  <div id="tableView">
+    <div class="bar">
+      <button onclick="saveXLSX()" data-i18n="dlX"></button>
+      <button onclick="saveDOC()" data-i18n="dlW"></button>
+    </div>
+    <div id="out"></div>
+  </div>
+  <div id="chartView" style="display:none"></div>
+</div>
+</main>
+<div id="msg" role="status"></div>
+
+<script>
+let lang='th',mode='corr',cm='pearson',view='table',cols=[],rows=[],last=null;
+const SY={pearson:['r','Pearson r'],spearman:['ρ','Spearman rho'],kendall:['τ','Kendall tau-b']};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(m){const e=$('msg');e.textContent=m;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',3000)}
+
+/* ================= i18n ================= */
+const L={
+th:{
+ title:'วิเคราะห์ Correlation และ Multiple Regression',
+ sub:'กรอกข้อมูลตัวเลขหรือแนบไฟล์ Excel แล้วกดประมวลผล ผลลัพธ์แสดงในรูปแบบคล้าย SPSS',
+ s1:'1. เลือกวิธีการวิเคราะห์',mC:'Correlation',mR:'Multiple Regression',
+ dep:'ตัวแปรตาม (Y):',depHint:'ตัวแปรที่เหลือทั้งหมดเป็นตัวแปรอิสระ',
+ s2:'2. ใส่ข้อมูล',s2hint:'(พิมพ์ชื่อตัวแปรที่หัวคอลัมน์ได้)',
+ addCol:'+ เพิ่มตัวแปร',addRow:'+ เพิ่มแถว',sample:'ใส่ตัวอย่างข้อมูล',fileLbl:'หรือแนบไฟล์ Excel / CSV:',
+ run:'ประมวลผล',reset:'Reset ข้อมูล',
+ pasteNote:'วางข้อมูลจาก Excel: ก๊อปช่วงเซลล์ แล้วคลิกช่องแรกที่ต้องการ กด Ctrl+V (ถ้าคลิกที่ช่องชื่อตัวแปร แถวแรกที่วางจะเป็นชื่อตัวแปร)<br>ไฟล์ Excel: แถวแรกเป็นชื่อตัวแปร แถวถัดไปเป็นตัวเลข แถวที่มีช่องว่างหรือไม่ใช่ตัวเลขจะถูกตัดออกทั้งแถว',
+ viewT:'แสดงผลเป็นตาราง',viewC:'แสดงผลเป็นกราฟ',dlX:'ดาวน์โหลดตารางเป็นไฟล์ Excel',dlW:'บันทึกเป็นไฟล์ Word',dlPng:'ดาวน์โหลด PNG',
+ glTitle:'คำอธิบายค่าสถิติ',
+ hCorr:'ผลการวิเคราะห์ Correlation (Pearson)',hReg:'ผลการวิเคราะห์ Multiple Regression',
+ hExp:'การอธิบายผลการวิเคราะห์',hEqs:'สมการทำนาย',eqRaw:'สมการคะแนนดิบ:',eqStd:'สมการคะแนนมาตรฐาน:',
+ vr:'ตัวแปร',delVar:'ลบตัวแปร',aVar:j=>`ชื่อตัวแปรที่ ${j}`,aCell:(i,j)=>`แถว ${i} คอลัมน์ ${j}`,
+ tMin3:'ต้องมีข้อมูลที่ครบทุกตัวแปรอย่างน้อย 3 แถว',tSD0:'มีตัวแปรที่ค่าเท่ากันทุกแถว (SD = 0) ไม่สามารถวิเคราะห์ได้',
+ tFile:'อ่านไฟล์ไม่ได้ ตรวจสอบรูปแบบไฟล์',tReset:'รีเซ็ตข้อมูลแล้ว',tPaste:'วางข้อมูลแล้ว',tSample:'ใส่ตัวอย่างข้อมูลแล้ว (30 แถว)',
+ tImport:(r,c)=>`นำเข้า ${r} แถว ${c} ตัวแปร`,tWait:'กำลังสร้างไฟล์...',tSaved:'บันทึกแล้ว',tFail:'สร้างไฟล์ไม่สำเร็จ',
+ errN:n=>`จำนวนแถวต้องมากกว่าจำนวนตัวแปรอิสระ + 1 (ตอนนี้มี ${n} แถว)`,errCol:'ตัวแปรอิสระมีความสัมพันธ์กันเองสมบูรณ์ (multicollinearity) หรือข้อมูลไม่พอ',
+ sampleCols:['ชั่วโมงอ่านหนังสือ','ชั่วโมงนอน','การเข้าเรียน (%)','คะแนนสอบ'],
+ lv5:['สูงมาก','สูง','ปานกลาง','ต่ำ','ต่ำมาก'],sigY:'มีนัยสำคัญ',sigN:'ไม่มีนัยสำคัญ',outl:'ค่าผิดปกติ',
+ starNote:'** Correlation is significant at the 0.01 level (2-tailed). * Correlation is significant at the 0.05 level (2-tailed).',
+ corrIntro:(n,k,p)=>`วิเคราะห์ด้วยสหสัมพันธ์เพียร์สัน (Pearson) จากข้อมูล ${n} ชุด ตัวแปร ${k} ตัว (${p} คู่) ที่ระดับนัยสำคัญ .05 และรายงาน Spearman rho เป็นข้อมูลประกอบ`,
+ corrSigN:n=>`พบคู่ตัวแปรที่มีความสัมพันธ์อย่างมีนัยสำคัญทางสถิติ ${n} คู่ ดังนี้`,
+ corrNone:'ไม่พบคู่ตัวแปรที่มีความสัมพันธ์อย่างมีนัยสำคัญทางสถิติ',
+ corrPair:(a,b,r,lv,rs,ps,pct)=>`• <b>${a}</b> กับ <b>${b}</b> มีความสัมพันธ์ทิศทาง${r>0?'บวก (เพิ่มขึ้นไปด้วยกัน)':'ลบ (ผกผันกัน)'} ระดับ${lv} (r = ${rs}, p = ${ps}) อธิบายความแปรปรวนซึ่งกันและกันได้ ${pct}%`,
+ corrCrit:'เกณฑ์การแปลผลขนาดความสัมพันธ์ (|r|): ≥ .80 สูงมาก, .60–.79 สูง, .40–.59 ปานกลาง, .20–.39 ต่ำ, &lt; .20 ต่ำมาก ค่า r เป็นเพียงความสัมพันธ์ ไม่ได้บอกความเป็นเหตุเป็นผล และกลุ่มตัวอย่างเล็กอาจทำให้ผลไม่เสถียร',
+ eqNote:'สมการได้จาก b = r × (SD<sub>Y</sub> / SD<sub>X</sub>) และ a = Ȳ − bX̄ ใช้ทำนายตัวแปรหลังเครื่องหมาย = จากตัวแปรในวงเล็บ',
+ regModel:(k,Y,sg,F,d,p)=>`• <b>ภาพรวมของโมเดล:</b> ตัวแปรอิสระ ${k} ตัวร่วมกันทำนาย ${Y} ได้${sg?'อย่างมีนัยสำคัญทางสถิติ':'ไม่มีนัยสำคัญทางสถิติ'} (F(${k}, ${d}) = ${F}, p = ${p})`,
+ regR:(Y,R,lv,R2,pct,adj)=>`• <b>R = ${R}</b> บอกความสัมพันธ์ระหว่างค่าจริงกับค่าทำนาย ระดับ${lv} <b>R² = ${R2}</b> หมายความว่าตัวแปรอิสระอธิบายความแปรปรวนของ ${Y} ได้ ${pct}% และค่า Adjusted R² = ${adj} (ปรับตามจำนวนตัวแปรและขนาดตัวอย่างแล้ว)`,
+ regVar:(x,Y,pos,bs,ps,ba)=>`${x} มีผลทาง${pos?'บวก':'ลบ'}ต่อ ${Y} อย่างมีนัยสำคัญ (B = ${bs}, p = ${ps}) คือเมื่อ ${x} เพิ่มขึ้น 1 หน่วย ${Y} จะ${pos?'เพิ่มขึ้น':'ลดลง'} ${ba} หน่วย โดยควบคุมตัวแปรอื่นคงที่`,
+ regVarH:'• <b>รายตัวแปร:</b> ',regNoVar:'ไม่มีตัวแปรอิสระตัวใดที่มีนัยสำคัญทางสถิติที่ระดับ .05',
+ regTop:(x,b)=>`• ตัวแปรที่มีอิทธิพลสัมพัทธ์สูงสุดโดยดูจาก |Beta| คือ <b>${x}</b> (Beta = ${b})`,
+ regVifBad:'พบ VIF มากกว่า 10 แสดงว่าตัวแปรอิสระสัมพันธ์กันเองสูง ควรพิจารณาตัดตัวแปรบางตัว',regVifOk:'ค่า VIF ทุกตัวไม่เกิน 10 ไม่พบปัญหา multicollinearity ที่รุนแรง',
+ regDW:(d,ok)=>`• <b>Durbin-Watson = ${d}:</b> ${ok?'อยู่ในช่วง 1.5–2.5 ไม่พบ autocorrelation ของค่าคลาดเคลื่อนที่เด่นชัด':'อยู่นอกช่วง 1.5–2.5 อาจมี autocorrelation (ค่านี้มีความหมายเมื่อข้อมูลเรียงตามลำดับเวลา)'}`,
+ regOut:(n)=>`• <b>ค่าผิดปกติ:</b> พบ ${n} แถวที่ |Std. Residual| > 3 ควรตรวจสอบ (ดูตาราง Casewise Diagnostics)`,
+ regSmall:(n,k)=>`ข้อสังเกต: ตัวอย่าง ${n} ชุดค่อนข้างน้อยเมื่อเทียบกับจำนวนตัวแปร (แนะนำอย่างน้อย 10–20 ชุดต่อตัวแปรอิสระ) ผลอาจไม่เสถียร`,
+ cHeat:'Heat Map ของ Correlation Matrix',cSplom:'Scatterplot Matrix',cPairs:'ค่า r รายคู่ พร้อมช่วงความเชื่อมั่น 95%',cObs:'Multiple Regression: ค่าจริง เทียบ ค่าทำนาย',cRes:'Residual Plot: Std. Residual เทียบ ค่าทำนาย',cQQ:'Normal Q-Q Plot ของ Std. Residual',cHist:'Histogram ของ Std. Residual',cBeta:'Standardized Coefficients (Beta)',
+ hHeat:'สีแดง = สัมพันธ์ทางบวก สีน้ำเงิน = สัมพันธ์ทางลบ ยิ่งเข้มยิ่งสัมพันธ์แรง',
+ hSplom:'เส้นทแยงมุมคือฮิสโตแกรมของแต่ละตัวแปร ช่องอื่นคือแผนภาพการกระจาย (แกน X = ตัวแปรของคอลัมน์, แกน Y = ตัวแปรของแถว) พร้อมเส้นถดถอยและค่า r',
+ hPairs:'แท่ง = ค่า r, เส้นขีด = ช่วงความเชื่อมั่น 95% (Fisher z) สีเขียว = มีนัยสำคัญที่ .05 สีเทา = ไม่มีนัยสำคัญ',
+ hObs:'จุดยิ่งใกล้เส้นทแยงมุมยิ่งแสดงว่าทำนายได้แม่น',
+ hRes:'ควรกระจายสุ่มรอบเส้น 0 ไม่เป็นรูปกรวยหรือเป็นโค้ง (ตรวจความเท่ากันของความแปรปรวนและความเป็นเส้นตรง) เส้นประ = ±2',
+ hQQ:'ถ้าค่าคลาดเคลื่อนแจกแจงปกติ จุดควรอยู่ใกล้เส้นทแยงมุม',
+ hHist:'ฮิสโตแกรมของ Std. Residual เทียบกับเส้นโค้งปกติ (สีแดง)',
+ hBeta:'ค่า Beta มาตรฐาน ใช้เทียบอิทธิพลสัมพัทธ์ สีเขียว = มีนัยสำคัญที่ .05 สีเทา = ไม่มีนัยสำคัญ',
+ aPred:Y=>`ค่าทำนาย (Predicted ${Y})`,aObs:Y=>`ค่าจริง (Observed ${Y})`,aTheo:'ควอนไทล์ตามทฤษฎี (Normal)',aZres:'Std. Residual',aFreq:'จำนวน (Frequency)',aR:'Pearson r',aBeta:'Standardized Beta'
+},
+en:{
+ title:'Correlation & Multiple Regression Analysis',
+ sub:'Enter numeric data or attach an Excel file, then press Analyze. Results are shown in an SPSS-like format.',
+ s1:'1. Choose analysis',mC:'Correlation',mR:'Multiple Regression',
+ dep:'Dependent variable (Y):',depHint:'All remaining variables are independent variables',
+ s2:'2. Enter data',s2hint:'(variable names can be edited in the column headers)',
+ addCol:'+ Add variable',addRow:'+ Add row',sample:'Load sample data',fileLbl:'or attach Excel / CSV file:',
+ run:'Analyze',reset:'Reset data',
+ pasteNote:'Paste from Excel: copy a range of cells, click the first target cell and press Ctrl+V (if you click a variable-name cell, the first pasted row becomes the variable names).<br>Excel file: first row = variable names, following rows = numbers. Rows with blank or non-numeric cells are dropped entirely.',
+ viewT:'Show as tables',viewC:'Show as charts',dlX:'Download tables as Excel',dlW:'Save as Word file',dlPng:'Download PNG',
+ glTitle:'Explanation of statistics',
+ hCorr:'Correlation Analysis (Pearson)',hReg:'Multiple Regression Analysis',
+ hExp:'Interpretation',hEqs:'Prediction Equations',eqRaw:'Unstandardized equation:',eqStd:'Standardized equation:',
+ vr:'Variable',delVar:'Delete variable',aVar:j=>`Name of variable ${j}`,aCell:(i,j)=>`Row ${i} column ${j}`,
+ tMin3:'At least 3 rows with complete data are required',tSD0:'A variable has the same value in every row (SD = 0); cannot analyze',
+ tFile:'Cannot read the file. Please check its format',tReset:'Data reset',tPaste:'Data pasted',tSample:'Sample data loaded (30 rows)',
+ tImport:(r,c)=>`Imported ${r} rows, ${c} variables`,tWait:'Creating file...',tSaved:'Saved',tFail:'Could not create the file',
+ errN:n=>`Number of rows must exceed the number of independent variables + 1 (currently ${n} rows)`,errCol:'Independent variables are perfectly collinear (multicollinearity) or there is not enough data',
+ sampleCols:['Study hours','Sleep hours','Attendance (%)','Exam score'],
+ lv5:['Very high','High','Moderate','Low','Very low'],sigY:'Significant',sigN:'Not significant',outl:'Outlier',
+ starNote:'** Correlation is significant at the 0.01 level (2-tailed). * Correlation is significant at the 0.05 level (2-tailed).',
+ corrIntro:(n,k,p)=>`Pearson correlation was computed from ${n} cases and ${k} variables (${p} pairs) at the .05 significance level; Spearman rho is reported as supplementary information.`,
+ corrSigN:n=>`${n} variable pair(s) showed a statistically significant relationship:`,
+ corrNone:'No variable pair showed a statistically significant relationship.',
+ corrPair:(a,b,r,lv,rs,ps,pct)=>`• <b>${a}</b> and <b>${b}</b> have a ${r>0?'positive (rise together)':'negative (inverse)'} relationship of ${lv.toLowerCase()} strength (r = ${rs}, p = ${ps}), sharing ${pct}% of their variance.`,
+ corrCrit:'Interpretation of |r|: ≥ .80 very high, .60–.79 high, .40–.59 moderate, .20–.39 low, &lt; .20 very low. r describes association, not causation, and small samples can make results unstable.',
+ eqNote:'Equations use b = r × (SD<sub>Y</sub> / SD<sub>X</sub>) and a = Ȳ − bX̄. They predict the variable before “=” from the variable in parentheses.',
+ regModel:(k,Y,sg,F,d,p)=>`• <b>Overall model:</b> the ${k} independent variable(s) together ${sg?'significantly predict':'do not significantly predict'} ${Y} (F(${k}, ${d}) = ${F}, p = ${p}).`,
+ regR:(Y,R,lv,R2,pct,adj)=>`• <b>R = ${R}</b> is the correlation between observed and predicted values (${lv.toLowerCase()}). <b>R² = ${R2}</b> means the predictors explain ${pct}% of the variance in ${Y}; Adjusted R² = ${adj} (corrected for number of predictors and sample size).`,
+ regVar:(x,Y,pos,bs,ps,ba)=>`${x} has a significant ${pos?'positive':'negative'} effect on ${Y} (B = ${bs}, p = ${ps}): each 1-unit increase in ${x} ${pos?'raises':'lowers'} ${Y} by ${ba} units, holding the other variables constant`,
+ regVarH:'• <b>Individual predictors:</b> ',regNoVar:'no independent variable is significant at the .05 level',
+ regTop:(x,b)=>`• The predictor with the largest relative influence by |Beta| is <b>${x}</b> (Beta = ${b}).`,
+ regVifBad:'VIF above 10 found: predictors are highly intercorrelated; consider removing some.',regVifOk:'All VIF values are 10 or below: no serious multicollinearity.',
+ regDW:(d,ok)=>`• <b>Durbin-Watson = ${d}:</b> ${ok?'within 1.5–2.5, so no clear autocorrelation of residuals.':'outside 1.5–2.5, so residuals may be autocorrelated (meaningful when data are in time order).'}`,
+ regOut:(n)=>`• <b>Outliers:</b> ${n} case(s) have |Std. Residual| > 3 and should be checked (see Casewise Diagnostics).`,
+ regSmall:(n,k)=>`Note: ${n} cases is fairly small relative to the number of predictors (at least 10–20 cases per predictor is recommended); results may be unstable.`,
+ cHeat:'Correlation Matrix Heat Map',cSplom:'Scatterplot Matrix',cPairs:'Pairwise r with 95% Confidence Interval',cObs:'Multiple Regression: Observed vs Predicted',cRes:'Residual Plot: Std. Residual vs Predicted',cQQ:'Normal Q-Q Plot of Std. Residual',cHist:'Histogram of Std. Residual',cBeta:'Standardized Coefficients (Beta)',
+ hHeat:'Red = positive, blue = negative; darker means stronger.',
+ hSplom:'Diagonal cells are histograms. Other cells are scatterplots (X axis = column variable, Y axis = row variable) with fitted line and r.',
+ hPairs:'Bar = r, whiskers = 95% CI (Fisher z). Green = significant at .05, grey = not significant.',
+ hObs:'The closer the points are to the diagonal line, the more accurate the prediction.',
+ hRes:'Points should scatter randomly around 0, without funnel or curved patterns (checks equal variance and linearity). Dashed lines = ±2.',
+ hQQ:'If residuals are normally distributed, points should lie close to the diagonal.',
+ hHist:'Histogram of Std. Residual against a normal curve (red).',
+ hBeta:'Standardized Beta compares relative influence. Green = significant at .05, grey = not significant.',
+ aPred:Y=>`Predicted ${Y}`,aObs:Y=>`Observed ${Y}`,aTheo:'Theoretical Quantiles (Normal)',aZres:'Std. Residual',aFreq:'Frequency',aR:'Pearson r',aBeta:'Standardized Beta'
+}};
+const t=(k,...a)=>{const v=L[lang][k]??L.th[k];return typeof v=='function'?v(...a):v};
+
+/* ---- glossary ---- */
+const G={
+th:{
+ n:['N','จำนวนข้อมูลที่ใช้วิเคราะห์จริง (นับเฉพาะแถวที่มีตัวเลขครบทุกตัวแปร)'],
+ mean:['Mean','ค่าเฉลี่ยเลขคณิต = ผลรวมของค่าทั้งหมด ÷ N'],
+ se:['Std. Error of Mean','ความคลาดเคลื่อนมาตรฐานของค่าเฉลี่ย = SD ÷ √N ยิ่งน้อยแสดงว่าค่าเฉลี่ยกลุ่มตัวอย่างใกล้เคียงค่าเฉลี่ยประชากรมากขึ้น'],
+ ci:['95% CI of Mean','ช่วงความเชื่อมั่น 95% ของค่าเฉลี่ยประชากร = Mean ± t(.975, N−1) × Std. Error'],
+ median:['Median','มัธยฐาน คือค่ากลางเมื่อเรียงข้อมูลจากน้อยไปมาก ไวต่อค่าผิดปกติน้อยกว่าค่าเฉลี่ย'],
+ sd:['Std. Deviation','ส่วนเบี่ยงเบนมาตรฐาน บอกการกระจายของข้อมูลรอบค่าเฉลี่ย (ตัวหารคือ N−1)'],
+ var:['Variance','ความแปรปรวน = SD²'],
+ min:['Minimum / Maximum / Range','ค่าต่ำสุด ค่าสูงสุด และพิสัย (Range = Maximum − Minimum)'],
+ skew:['Skewness','ความเบ้ของการแจกแจง 0 = สมมาตร, บวก = หางยาวไปทางขวา, ลบ = หางยาวไปทางซ้าย ถ้า |Skewness ÷ Std. Error| > 1.96 ถือว่าเบ้อย่างมีนัยสำคัญ'],
+ kurt:['Kurtosis','ความโด่งส่วนเกิน 0 = โด่งเท่าโค้งปกติ, บวก = ยอดแหลมหางหนา, ลบ = ยอดแบน ใช้ตรวจสมมติฐานการแจกแจงปกติร่วมกับ Skewness'],
+ r:['Pearson Correlation (r)','สัมประสิทธิ์สหสัมพันธ์เพียร์สัน มีค่า −1 ถึง +1 เครื่องหมายบอกทิศทาง (+ เพิ่มไปด้วยกัน, − ผกผัน) ค่าสัมบูรณ์บอกความแรงของความสัมพันธ์เชิงเส้น'],
+ sig:['Sig. (2-tailed)','ค่า p แบบสองทาง ถ้า < .05 แสดงว่าความสัมพันธ์มีนัยสำคัญทางสถิติ (ปฏิเสธ H₀: ρ = 0)'],
+ cov:['Covariance','ความแปรปรวนร่วม บอกทิศทางที่ตัวแปรสองตัวผันร่วมกัน (ขึ้นกับหน่วยวัด จึงเทียบข้ามคู่ไม่ได้) ค่าบนเส้นทแยงมุมคือ Variance'],
+ r2:['R²','สัมประสิทธิ์การตัดสินใจ = r² คือสัดส่วนความแปรปรวนของตัวแปรหนึ่งที่อธิบายได้ด้วยอีกตัวแปรหนึ่ง'],
+ level:['Level','ระดับความสัมพันธ์จาก |r|: ≥ .80 สูงมาก, .60–.79 สูง, .40–.59 ปานกลาง, .20–.39 ต่ำ, < .20 ต่ำมาก'],
+ tr:['t, df','สถิติทดสอบนัยสำคัญของ r: t = r√((N−2)/(1−r²)) ที่ df = N−2'],
+ cir:['95% CI of r','ช่วงความเชื่อมั่น 95% ของ r คำนวณด้วย Fisher z transformation (ต้องมี N > 3) ถ้าไม่คร่อม 0 สอดคล้องกับ Sig. < .05'],
+ rho:['Spearman rho','สหสัมพันธ์อันดับของสเปียร์แมน คือ Pearson ที่คำนวณจากอันดับของข้อมูล เหมาะเมื่อข้อมูลไม่เป็นโค้งปกติ ความสัมพันธ์ไม่เป็นเส้นตรงแต่ไปทางเดียวกัน หรือมีค่าผิดปกติ (Sig. ประมาณจากการแจกแจง t)'],
+ dec:['Decision','ผลสรุปที่ระดับนัยสำคัญ .05'],
+ a:['a (Constant)','ค่าคงที่ (จุดตัดแกน Y) คือค่าทำนายของตัวแปรตามเมื่อตัวแปรต้นเป็น 0'],
+ b:['b (Slope)','ความชัน = r × (SD_Y ÷ SD_X) คือการเปลี่ยนแปลงของตัวแปรตามเมื่อตัวแปรต้นเพิ่ม 1 หน่วย'],
+ seb:['Std. Error of b','ความคลาดเคลื่อนมาตรฐานของความชัน'],
+ seest:['Std. Error of the Estimate','= √(SSE ÷ df residual) คือขนาดโดยประมาณที่ค่าจริงต่างจากค่าทำนาย (หน่วยเดียวกับตัวแปรตาม) ยิ่งน้อยยิ่งทำนายแม่น'],
+ vent:['Variables Entered','ตัวแปรอิสระที่ใส่ในโมเดล วิธี Enter คือใส่ทุกตัวพร้อมกัน'],
+ R:['R','สหสัมพันธ์พหุคูณ คือความสัมพันธ์ระหว่างค่าจริงกับค่าทำนายของตัวแปรตาม (0–1)'],
+ R2m:['R Square','สัดส่วนความแปรปรวนของตัวแปรตามที่อธิบายได้ด้วยตัวแปรอิสระทั้งหมด = SSR ÷ SST'],
+ adj:['Adjusted R Square','R² ที่ปรับตามจำนวนตัวแปรอิสระและขนาดตัวอย่าง = 1 − (1−R²)(N−1)/(N−k−1) ใช้เทียบโมเดลที่มีจำนวนตัวแปรต่างกัน'],
+ dw:['Durbin-Watson','ตรวจ autocorrelation ของค่าคลาดเคลื่อนที่เรียงติดกัน ใกล้ 2 = ไม่มีปัญหา, ใกล้ 0 = สัมพันธ์บวก, ใกล้ 4 = สัมพันธ์ลบ ช่วง 1.5–2.5 ถือว่ายอมรับได้ (มีความหมายเมื่อข้อมูลเรียงตามเวลา)'],
+ ss:['Sum of Squares','Regression (SSR) = ส่วนที่โมเดลอธิบายได้, Residual (SSE) = ส่วนที่อธิบายไม่ได้, Total (SST) = ความแปรปรวนรวม โดย SST = SSR + SSE'],
+ df:['df','องศาอิสระ: Regression = k (จำนวนตัวแปรอิสระ), Residual = N − k − 1, Total = N − 1'],
+ ms:['Mean Square','Sum of Squares ÷ df'],
+ F:['F','สถิติทดสอบนัยสำคัญของโมเดลโดยรวม = MS Regression ÷ MS Residual'],
+ sigF:['Sig.','ค่า p ของ F ถ้า < .05 แสดงว่าตัวแปรอิสระอย่างน้อยหนึ่งตัวทำนายตัวแปรตามได้'],
+ B:['B','สัมประสิทธิ์การถดถอยแบบดิบ คือค่าที่ตัวแปรตามเปลี่ยนเมื่อตัวแปรอิสระนั้นเพิ่ม 1 หน่วย โดยควบคุมตัวแปรอื่นคงที่ (Constant = ค่าทำนายเมื่อตัวแปรอิสระทุกตัวเป็น 0)'],
+ seB:['Std. Error','ความคลาดเคลื่อนมาตรฐานของ B'],
+ beta:['Beta','สัมประสิทธิ์การถดถอยมาตรฐาน = B × SD_X ÷ SD_Y ใช้เทียบอิทธิพลของตัวแปรที่มีหน่วยต่างกัน ยิ่ง |Beta| มากยิ่งมีอิทธิพลสัมพัทธ์สูง'],
+ tv:['t','สถิติทดสอบว่า B ≠ 0 = B ÷ Std. Error ที่ df = N − k − 1'],
+ sigt:['Sig.','ค่า p ของ t ถ้า < .05 แสดงว่าตัวแปรนั้นมีผลต่อตัวแปรตามอย่างมีนัยสำคัญเมื่อควบคุมตัวแปรอื่น'],
+ ciB:['95% CI for B','ช่วงความเชื่อมั่น 95% ของ B = B ± t(.975, df) × Std. Error ถ้าไม่คร่อม 0 สอดคล้องกับ Sig. < .05'],
+ zero:['Zero-order','สหสัมพันธ์เพียร์สันธรรมดาระหว่างตัวแปรอิสระกับตัวแปรตาม (ไม่ควบคุมตัวแปรอื่น)'],
+ partial:['Partial','สหสัมพันธ์ย่อย ระหว่างตัวแปรอิสระกับตัวแปรตามเมื่อกำจัดอิทธิพลของตัวแปรอิสระอื่นออกจากทั้งสองตัวแปร'],
+ part:['Part (Semi-partial)','สหสัมพันธ์กึ่งย่อย กำจัดอิทธิพลตัวแปรอื่นออกจากตัวแปรอิสระเท่านั้น Part² คือ R² ที่เพิ่มขึ้นเฉพาะจากตัวแปรนั้น'],
+ tol:['Tolerance','= 1 − R² ของการถดถอยตัวแปรอิสระนั้นด้วยตัวแปรอิสระอื่น ค่าต่ำกว่า .10 บ่งชี้ปัญหา multicollinearity'],
+ vif:['VIF','Variance Inflation Factor = 1 ÷ Tolerance ค่ามากกว่า 10 (บางตำราใช้ 5) บ่งชี้ว่าตัวแปรอิสระสัมพันธ์กันเองสูง'],
+ pred:['Predicted Value','ค่าทำนายของตัวแปรตามจากสมการถดถอย (Ŷ)'],
+ resid:['Residual','ค่าคลาดเคลื่อน = ค่าจริง − ค่าทำนาย (Y − Ŷ) ค่าเฉลี่ยของ Residual เท่ากับ 0 เสมอ'],
+ zpred:['Std. Predicted Value','ค่าทำนายที่แปลงเป็นคะแนนมาตรฐาน (Z)'],
+ zres:['Std. Residual','= Residual ÷ Std. Error of the Estimate ค่าที่เกิน ±3 ถือว่าอาจเป็นค่าผิดปกติ (outlier) ควรตรวจสอบ'],
+ obs:['Observed / Predicted / Residual','ค่าจริง ค่าทำนาย และผลต่างของแต่ละแถว (Case) ตามลำดับที่ใส่ข้อมูล']
+},
+en:{
+ n:['N','Number of cases actually analyzed (only rows with numbers in every variable).'],
+ mean:['Mean','Arithmetic mean = sum of all values ÷ N.'],
+ se:['Std. Error of Mean','SD ÷ √N. The smaller it is, the closer the sample mean is likely to be to the population mean.'],
+ ci:['95% CI of Mean','95% confidence interval of the population mean = Mean ± t(.975, N−1) × Std. Error.'],
+ median:['Median','Middle value when data are sorted; less sensitive to outliers than the mean.'],
+ sd:['Std. Deviation','Spread of the data around the mean (denominator N−1).'],
+ var:['Variance','SD².'],
+ min:['Minimum / Maximum / Range','Smallest value, largest value and their difference (Range = Maximum − Minimum).'],
+ skew:['Skewness','Asymmetry of the distribution. 0 = symmetric, positive = long right tail, negative = long left tail. |Skewness ÷ Std. Error| > 1.96 suggests significant skew.'],
+ kurt:['Kurtosis','Excess kurtosis. 0 = same as a normal curve, positive = peaked with heavy tails, negative = flatter. Used with skewness to check normality.'],
+ r:['Pearson Correlation (r)','Ranges from −1 to +1. Sign gives direction (+ rise together, − inverse); absolute value gives the strength of the linear relationship.'],
+ sig:['Sig. (2-tailed)','Two-tailed p-value. If < .05 the correlation is statistically significant (reject H₀: ρ = 0).'],
+ cov:['Covariance','How two variables vary together (depends on units, so not comparable across pairs). The diagonal is the Variance.'],
+ r2:['R²','Coefficient of determination = r²: proportion of variance in one variable explained by the other.'],
+ level:['Level','Strength from |r|: ≥ .80 very high, .60–.79 high, .40–.59 moderate, .20–.39 low, < .20 very low.'],
+ tr:['t, df','Significance test of r: t = r√((N−2)/(1−r²)) with df = N−2.'],
+ cir:['95% CI of r','95% confidence interval of r via Fisher z transformation (needs N > 3). If it excludes 0 it agrees with Sig. < .05.'],
+ rho:['Spearman rho','Rank correlation: Pearson computed on the ranks. Suitable for non-normal data, monotonic non-linear relationships or outliers (Sig. approximated by the t distribution).'],
+ dec:['Decision','Conclusion at the .05 significance level.'],
+ a:['a (Constant)','Intercept: predicted value of the dependent variable when the predictor is 0.'],
+ b:['b (Slope)','= r × (SD_Y ÷ SD_X): change in the dependent variable per 1-unit increase in the predictor.'],
+ seb:['Std. Error of b','Standard error of the slope.'],
+ seest:['Std. Error of the Estimate','= √(SSE ÷ residual df): typical size of the gap between observed and predicted values (in units of the dependent variable). Smaller means better prediction.'],
+ vent:['Variables Entered','Predictors placed in the model. “Enter” means all are entered at once.'],
+ R:['R','Multiple correlation: correlation between observed and predicted values of the dependent variable (0–1).'],
+ R2m:['R Square','Proportion of variance in the dependent variable explained by all predictors = SSR ÷ SST.'],
+ adj:['Adjusted R Square','R² adjusted for the number of predictors and sample size = 1 − (1−R²)(N−1)/(N−k−1); useful for comparing models.'],
+ dw:['Durbin-Watson','Tests autocorrelation of consecutive residuals. Near 2 = fine, near 0 = positive, near 4 = negative. 1.5–2.5 is usually acceptable (meaningful for time-ordered data).'],
+ ss:['Sum of Squares','Regression (SSR) = explained, Residual (SSE) = unexplained, Total (SST) = total variation; SST = SSR + SSE.'],
+ df:['df','Degrees of freedom: Regression = k (number of predictors), Residual = N − k − 1, Total = N − 1.'],
+ ms:['Mean Square','Sum of Squares ÷ df.'],
+ F:['F','Test of the overall model = MS Regression ÷ MS Residual.'],
+ sigF:['Sig.','p-value of F. If < .05, at least one predictor significantly predicts the dependent variable.'],
+ B:['B','Unstandardized coefficient: change in the dependent variable per 1-unit increase in that predictor, holding the others constant (Constant = predicted value when all predictors are 0).'],
+ seB:['Std. Error','Standard error of B.'],
+ beta:['Beta','Standardized coefficient = B × SD_X ÷ SD_Y; compares influence of predictors measured in different units. Larger |Beta| = stronger relative influence.'],
+ tv:['t','Tests B ≠ 0: B ÷ Std. Error with df = N − k − 1.'],
+ sigt:['Sig.','p-value of t. If < .05 the predictor has a significant effect on the dependent variable, controlling for the others.'],
+ ciB:['95% CI for B','B ± t(.975, df) × Std. Error. If it excludes 0 it agrees with Sig. < .05.'],
+ zero:['Zero-order','Simple Pearson correlation between the predictor and the dependent variable (no control for other predictors).'],
+ partial:['Partial','Correlation between predictor and dependent variable after removing the other predictors’ influence from both.'],
+ part:['Part (Semi-partial)','Removes the other predictors’ influence from the predictor only. Part² is the unique increase in R² due to that predictor.'],
+ tol:['Tolerance','= 1 − R² from regressing that predictor on the other predictors. Below .10 signals multicollinearity.'],
+ vif:['VIF','Variance Inflation Factor = 1 ÷ Tolerance. Above 10 (some texts use 5) signals highly intercorrelated predictors.'],
+ pred:['Predicted Value','Value of the dependent variable predicted by the regression equation (Ŷ).'],
+ resid:['Residual','Error = observed − predicted (Y − Ŷ). The mean residual is always 0.'],
+ zpred:['Std. Predicted Value','Predicted values converted to Z scores.'],
+ zres:['Std. Residual','= Residual ÷ Std. Error of the Estimate. Values beyond ±3 may be outliers and should be checked.'],
+ obs:['Observed / Predicted / Residual','Observed value, predicted value and their difference for each case, in input order.']
+}};
+
+/* ---- text additions for correlation type ---- */
+Object.assign(L.th,{
+ cmLbl:'ประเภทสหสัมพันธ์:',
+ cmHintpearson:'Pearson r: ข้อมูลเชิงปริมาณ ความสัมพันธ์เป็นเส้นตรง ใกล้เคียงโค้งปกติ (ไวต่อค่าผิดปกติ)',
+ cmHintspearman:'Spearman rho: ใช้อันดับของข้อมูล เหมาะกับข้อมูลอันดับ ข้อมูลไม่เป็นโค้งปกติ หรือความสัมพันธ์ไม่เป็นเส้นตรงแต่ไปทางเดียวกัน',
+ cmHintkendall:"Kendall's tau-b: นับคู่ข้อมูลที่เรียงลำดับสอดคล้อง/ขัดแย้งกัน เหมาะกับตัวอย่างเล็กหรือมีค่าซ้ำมาก",
+ hCorrpearson:'ผลการวิเคราะห์ Correlation (Pearson r)',hCorrspearman:'ผลการวิเคราะห์ Correlation (Spearman Rank, rho)',hCorrkendall:"ผลการวิเคราะห์ Correlation (Kendall's tau-b)",
+ corrIntro:(n,k,p,m)=>`วิเคราะห์ด้วย${{pearson:'สหสัมพันธ์เพียร์สัน (Pearson r)',spearman:'สหสัมพันธ์อันดับของสเปียร์แมน (Spearman rho)',kendall:'สหสัมพันธ์อันดับของเคนดอลล์ (Kendall tau-b)'}[m]} จากข้อมูล ${n} ชุด ตัวแปร ${k} ตัว (${p} คู่) ที่ระดับนัยสำคัญ .05`,
+ corrNote:m=>({pearson:'Pearson r เหมาะกับข้อมูลเชิงปริมาณที่ความสัมพันธ์เป็นเส้นตรงและใกล้เคียงโค้งปกติ และไวต่อค่าผิดปกติ ถ้าข้อมูลไม่เข้าเงื่อนไขนี้ ควรพิจารณา Spearman หรือ Kendall',spearman:'Spearman rho คำนวณจากอันดับของข้อมูล (ค่าซ้ำใช้อันดับเฉลี่ย) จึงเหมาะกับข้อมูลอันดับ ข้อมูลที่ไม่เป็นโค้งปกติ หรือความสัมพันธ์ที่ไปทางเดียวกันแต่ไม่เป็นเส้นตรง และทนต่อค่าผิดปกติ ค่า Sig. ประมาณด้วยการแจกแจง t',kendall:'Kendall tau-b อิงจำนวนคู่ข้อมูลที่เรียงลำดับสอดคล้อง (C) และขัดแย้ง (D) เหมาะกับตัวอย่างเล็กหรือมีค่าซ้ำมาก (tau-b ปรับผลของค่าซ้ำแล้ว) ค่า τ มักมีขนาดน้อยกว่า ρ ของ Spearman (ประมาณ 2/3) จึงไม่ควรเทียบกับ r โดยตรง ค่า Sig. ประมาณด้วยการแจกแจงปกติ (z) ที่ปรับค่าซ้ำ'}[m]),
+ corrPairS:(a,b,r,lv,rs,ps,pct)=>`• <b>${a}</b> กับ <b>${b}</b> มีความสัมพันธ์เชิงอันดับทิศทาง${r>0?'บวก (อันดับเพิ่มขึ้นไปด้วยกัน)':'ลบ (อันดับผกผันกัน)'} ระดับ${lv} (ρ = ${rs}, p = ${ps}) ใช้ความแปรปรวนของอันดับร่วมกัน ${pct}% (ρ²)`,
+ corrPairK:(a,b,r,lv,rs,ps)=>`• <b>${a}</b> กับ <b>${b}</b> มีความสัมพันธ์เชิงอันดับทิศทาง${r>0?'บวก':'ลบ'} ระดับ${lv} (τb = ${rs}, p = ${ps}) คือความน่าจะเป็นที่คู่ข้อมูลเรียงลำดับ${r>0?'สอดคล้องกัน':'ขัดแย้งกัน'}สูงกว่าอีกแบบประมาณ ${rs.replace('-','')}`,
+ cPairs:sym=>`ค่า ${sym} รายคู่ พร้อมช่วงความเชื่อมั่น 95%`,
+ hPairs:'แท่ง = ค่าสหสัมพันธ์, เส้นขีด = ช่วงความเชื่อมั่น 95% (ประมาณด้วย Fisher z) สีเขียว = มีนัยสำคัญที่ .05 สีเทา = ไม่มีนัยสำคัญ',
+ hSplomR:'เส้นทแยงมุมคือฮิสโตแกรมของค่าจริงของแต่ละตัวแปร ช่องอื่นเป็นแผนภาพการกระจายของ "อันดับ" (แกน X = ตัวแปรของคอลัมน์, แกน Y = ตัวแปรของแถว) พร้อมค่าสัมประสิทธิ์ (เส้นแนวโน้มแสดงเฉพาะ Spearman)'
+});
+Object.assign(L.en,{
+ cmLbl:'Correlation type:',
+ cmHintpearson:'Pearson r: quantitative data, linear relationship, roughly normal (sensitive to outliers)',
+ cmHintspearman:'Spearman rho: uses ranks; suited to ordinal data, non-normal data, or monotonic non-linear relationships',
+ cmHintkendall:"Kendall's tau-b: counts concordant/discordant pairs; suited to small samples or many ties",
+ hCorrpearson:'Correlation Analysis (Pearson r)',hCorrspearman:'Correlation Analysis (Spearman Rank, rho)',hCorrkendall:"Correlation Analysis (Kendall's tau-b)",
+ corrIntro:(n,k,p,m)=>`${{pearson:'Pearson correlation',spearman:'Spearman rank correlation (rho)',kendall:'Kendall rank correlation (tau-b)'}[m]} was computed from ${n} cases and ${k} variables (${p} pairs) at the .05 significance level.`,
+ corrNote:m=>({pearson:'Pearson r suits quantitative data with a linear relationship and roughly normal distributions, and is sensitive to outliers. If these conditions fail, consider Spearman or Kendall.',spearman:'Spearman rho is computed on the ranks (ties get average ranks), so it suits ordinal data, non-normal data and monotonic non-linear relationships, and is robust to outliers. Sig. is approximated with the t distribution.',kendall:'Kendall tau-b is based on the numbers of concordant (C) and discordant (D) pairs and suits small samples or data with many ties (tau-b corrects for ties). τ is typically smaller than Spearman ρ (about 2/3), so do not compare it directly with r. Sig. uses the tie-corrected normal (z) approximation.'}[m]),
+ corrPairS:(a,b,r,lv,rs,ps,pct)=>`• <b>${a}</b> and <b>${b}</b> have a ${r>0?'positive (ranks rise together)':'negative (ranks inverse)'} rank relationship of ${lv.toLowerCase()} strength (ρ = ${rs}, p = ${ps}); they share ${pct}% of rank variance (ρ²).`,
+ corrPairK:(a,b,r,lv,rs,ps)=>`• <b>${a}</b> and <b>${b}</b> have a ${r>0?'positive':'negative'} rank relationship of ${lv.toLowerCase()} strength (τb = ${rs}, p = ${ps}): the probability that a pair is ordered ${r>0?'concordantly':'discordantly'} exceeds the opposite by about ${rs.replace('-','')}.`,
+ cPairs:sym=>`Pairwise ${sym} with 95% Confidence Interval`,
+ hPairs:'Bar = coefficient, whiskers = 95% CI (Fisher z approximation). Green = significant at .05, grey = not significant.',
+ hSplomR:'Diagonal cells are histograms of raw values. Other cells are scatterplots of the ranks (X axis = column variable, Y axis = row variable) with the coefficient (trend line for Spearman only).'
+});
+Object.assign(G.th,{
+ q:['Percentiles / IQR','เปอร์เซ็นไทล์ที่ 25 (Q1) และ 75 (Q3) และพิสัยระหว่างควอร์ไทล์ IQR = Q3 − Q1 เป็นตัวบอกการกระจายที่ทนต่อค่าผิดปกติ เหมาะกับข้อมูลอันดับหรือไม่แจกแจงปกติ'],
+ rho:['Spearman rho (ρ)','สหสัมพันธ์อันดับของสเปียร์แมน คือค่า Pearson ที่คำนวณจากอันดับของข้อมูล (ค่าซ้ำใช้อันดับเฉลี่ย) มีค่า −1 ถึง +1 ใช้กับข้อมูลอันดับ ข้อมูลที่ไม่เป็นโค้งปกติ ความสัมพันธ์ที่ไปทางเดียวกันแต่ไม่เป็นเส้นตรง หรือมีค่าผิดปกติ'],
+ rho2:['ρ²','สัดส่วนความแปรปรวนของ "อันดับ" ที่สองตัวแปรใช้ร่วมกัน (ไม่ใช่ความแปรปรวนของค่าดิบ)'],
+ trS:['t, df','Sig. ของ ρ ประมาณด้วยสถิติ t = ρ√((N−2)/(1−ρ²)) ที่ df = N−2 (เหมาะเมื่อ N ไม่น้อยเกินไป)'],
+ cirho:['95% CI of ρ','ช่วงความเชื่อมั่นประมาณด้วย Fisher z โดยใช้ SE = √((1+ρ²/2)/(N−3)) (Bonett–Wright) ต้องมี N > 3'],
+ tauB:['Kendall tau-b (τb)','= (C − D) ÷ √((n₀ − T_x)(n₀ − T_y)) ปรับผลของค่าซ้ำแล้ว มีค่า −1 ถึง +1 ตีความเป็นผลต่างของความน่าจะเป็นที่คู่ข้อมูลเรียงลำดับสอดคล้องกันกับขัดแย้งกัน โดยทั่วไปขนาดน้อยกว่า ρ ของ Spearman'],
+ tauA:['Kendall tau-a (τa)','= (C − D) ÷ n₀ เมื่อ n₀ = N(N−1)/2 ไม่ปรับค่าซ้ำ (เท่ากับ tau-b เมื่อไม่มีค่าซ้ำ)'],
+ conc:['Concordant (C) / Discordant (D)','จำนวนคู่ข้อมูลที่เรียงลำดับสอดคล้องกัน (ตัวแปรหนึ่งมากกว่า อีกตัวแปรก็มากกว่า) และขัดแย้งกัน จากทั้งหมด n₀ = N(N−1)/2 คู่'],
+ tiesK:['Ties','จำนวนคู่ที่ค่าเท่ากันเฉพาะ X เฉพาะ Y หรือทั้งสองตัวแปร คู่ที่ค่าเท่ากันไม่นับเป็น C หรือ D'],
+ S:['S, Std. Dev. of S','S = C − D ส่วนเบี่ยงเบนมาตรฐานของ S คำนวณจากความแปรปรวนที่ปรับค่าซ้ำ: Var(S) = [N(N−1)(2N+5) − Σt(t−1)(2t+5) − Σu(u−1)(2u+5)]/18 + พจน์ปรับค่าซ้ำเพิ่มเติม'],
+ zK:['z','z = S ÷ √Var(S) ใช้ทดสอบ H₀: τ = 0 ด้วยการแจกแจงปกติมาตรฐาน'],
+ sigK:['Sig. (2-tailed)','ค่า p แบบสองทางจาก z ถ้า < .05 แสดงว่าความสัมพันธ์เชิงอันดับมีนัยสำคัญทางสถิติ'],
+ citau:['95% CI of τ','ช่วงความเชื่อมั่นโดยประมาณด้วย Fisher z และ SE ≈ √(0.437/(N−4)) ต้องมี N > 4 ถือเป็นค่าประมาณ']
+});
+Object.assign(G.en,{
+ q:['Percentiles / IQR','25th (Q1) and 75th (Q3) percentiles and the interquartile range IQR = Q3 − Q1, a spread measure robust to outliers; suited to ordinal or non-normal data.'],
+ rho:['Spearman rho (ρ)','Rank correlation: Pearson computed on the ranks (ties get average ranks), from −1 to +1. Suited to ordinal data, non-normal data, monotonic non-linear relationships or outliers.'],
+ rho2:['ρ²','Proportion of variance in the ranks shared by the two variables (not variance of the raw values).'],
+ trS:['t, df','Sig. of ρ is approximated with t = ρ√((N−2)/(1−ρ²)), df = N−2 (best when N is not very small).'],
+ cirho:['95% CI of ρ','Approximate interval via Fisher z with SE = √((1+ρ²/2)/(N−3)) (Bonett–Wright); needs N > 3.'],
+ tauB:['Kendall tau-b (τb)','= (C − D) ÷ √((n₀ − T_x)(n₀ − T_y)), corrected for ties, from −1 to +1. Interpreted as the probability of concordant minus discordant ordering of a pair. Usually smaller than Spearman ρ.'],
+ tauA:['Kendall tau-a (τa)','= (C − D) ÷ n₀ with n₀ = N(N−1)/2; no tie correction (equals tau-b when there are no ties).'],
+ conc:['Concordant (C) / Discordant (D)','Numbers of pairs ordered the same way on both variables (concordant) or opposite ways (discordant), out of n₀ = N(N−1)/2 pairs.'],
+ tiesK:['Ties','Pairs tied on X only, Y only, or both. Tied pairs count as neither C nor D.'],
+ S:['S, Std. Dev. of S','S = C − D. The SD of S comes from the tie-corrected variance: Var(S) = [N(N−1)(2N+5) − Σt(t−1)(2t+5) − Σu(u−1)(2u+5)]/18 plus additional tie terms.'],
+ zK:['z','z = S ÷ √Var(S), tests H₀: τ = 0 against the standard normal distribution.'],
+ sigK:['Sig. (2-tailed)','Two-tailed p-value from z. If < .05 the rank relationship is statistically significant.'],
+ citau:['95% CI of τ','Approximate interval via Fisher z with SE ≈ √(0.437/(N−4)); needs N > 4. Treat as an approximation.']
+});
+
+/* ================= data table ================= */
+const nmx=(c,j)=>c||t('vr')+' '+(j+1);
+function init(){cols=['X1','X2','Y'];rows=Array.from({length:5},()=>cols.map(()=>''));render()}
+function render(){
+  let h='<tr><th class="n"></th>'+cols.map((c,j)=>`<th><div style="display:flex;align-items:center"><input value="${esc(c)}" aria-label="${esc(t('aVar',j+1))}" oninput="cols[${j}]=this.value;fillDep()">${cols.length>2?`<button class="x" title="${esc(t('delVar'))}" onclick="delCol(${j})">×</button>`:''}</div></th>`).join('')+'</tr>';
+  rows.forEach((r,i)=>{h+=`<tr><td class="n">${i+1}</td>`+r.map((v,j)=>`<td><input inputmode="decimal" value="${esc(v)}" aria-label="${esc(t('aCell',i+1,j+1))}" oninput="rows[${i}][${j}]=this.value"></td>`).join('')+'</tr>'});
+  $('tbl').innerHTML=h;fillDep();
+}
+function fillDep(){const s=$('dep'),cur=s.value;s.innerHTML=cols.map((c,j)=>`<option value="${j}">${esc(nmx(c,j))}</option>`).join('');s.value=cur!==''&&+cur<cols.length?cur:cols.length-1}
+function addCol(){cols.push('X'+(cols.length+1));rows.forEach(r=>r.push(''));render()}
+function delCol(j){cols.splice(j,1);rows.forEach(r=>r.splice(j,1));render()}
+function addRow(){rows.push(cols.map(()=>''));render();const w=document.querySelector('.wrap');w.scrollTop=w.scrollHeight}
+function resetAll(){init();last=null;$('res').style.display='none';$('out').innerHTML='';$('chartView').innerHTML='';$('file').value='';toast(t('tReset'))}
+function setMode(m){mode=m;$('mC').classList.toggle('on',m=='corr');$('mR').classList.toggle('on',m=='reg');$('depBox').style.display=m=='reg'?'flex':'none';$('cmBox').style.display=m=='corr'?'block':'none'}
+function setCM(m){cm=m;updCM()}
+function updCM(){[['cmP','pearson'],['cmS','spearman'],['cmK','kendall']].forEach(([id,v])=>$(id).classList.toggle('on',cm==v));$('cmHint').innerHTML=t('cmHint'+cm)}
+function setView(v){view=v;$('vT').classList.toggle('on',v=='table');$('vC').classList.toggle('on',v=='chart');$('tableView').style.display=v=='table'?'block':'none';$('chartView').style.display=v=='chart'?'block':'none'}
+function setLang(l){lang=l;document.documentElement.lang=l;$('lTH').classList.toggle('on',l=='th');$('lEN').classList.toggle('on',l=='en');document.title=t('title');
+  document.querySelectorAll('[data-i18n]').forEach(e=>e.innerHTML=t(e.dataset.i18n));updCM();render();if(last)build()}
+
+function loadSample(){
+  let s=20240611;const rnd=()=>(s=(s*1664525+1013904223)%4294967296)/4294967296;
+  const gs=()=>{const u=rnd()||1e-9,v=rnd();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)};
+  const cl=(v,a,b)=>Math.max(a,Math.min(b,v));
+  cols=t('sampleCols').slice();rows=[];
+  for(let i=0;i<30;i++){
+    const st=cl(5+2*gs(),0.5,10),sl=cl(6.5+gs(),4,9),at=cl(80+9*gs()+1.5*(st-5),50,100),sc=cl(30+4*st+2.5*sl+.2*at+4*gs(),0,100);
+    rows.push([st,sl,at,sc].map(v=>v.toFixed(1)));
+  }
+  render();$('dep').value=cols.length-1;toast(t('tSample'));
+}
+$('file').addEventListener('change',e=>{
+  const f=e.target.files[0];if(!f)return;const rd=new FileReader();
+  rd.onload=ev=>{try{
+    const wb=XLSX.read(ev.target.result,{type:'array'});
+    const a=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});
+    if(a.length<2||a[0].length<2)throw 0;
+    cols=a[0].map((c,j)=>String(c||'V'+(j+1)));
+    rows=a.slice(1).filter(r=>r.some(v=>v!=='')).map(r=>cols.map((_,j)=>r[j]===undefined?'':String(r[j])));
+    render();toast(t('tImport',rows.length,cols.length));
+  }catch(x){toast(t('tFile'))}};
+  rd.readAsArrayBuffer(f);
+});
+
+/* ================= statistics ================= */
+const sum=a=>a.reduce((s,v)=>s+v,0),mean=a=>sum(a)/a.length;
+const sd=a=>{const m=mean(a);return Math.sqrt(sum(a.map(v=>(v-m)**2))/(a.length-1))};
+const cov=(x,y)=>{const mx=mean(x),my=mean(y);return sum(x.map((v,i)=>(v-mx)*(y[i]-my)))/(x.length-1)};
+const median=a=>{const s=[...a].sort((x,y)=>x-y),m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2};
+function skew(a){const n=a.length;if(n<3)return NaN;const m=mean(a),s=sd(a);return n/((n-1)*(n-2))*sum(a.map(v=>((v-m)/s)**3))}
+function kurt(a){const n=a.length;if(n<4)return NaN;const m=mean(a),s=sd(a);return n*(n+1)/((n-1)*(n-2)*(n-3))*sum(a.map(v=>((v-m)/s)**4))-3*(n-1)**2/((n-2)*(n-3))}
+const seSk=n=>Math.sqrt(6*n*(n-1)/((n-2)*(n+1)*(n+3)));
+const seKu=n=>2*seSk(n)*Math.sqrt((n*n-1)/((n-3)*(n+5)));
+function lg(x){const c=[76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,0.1208650973866179e-2,-0.5395239384953e-5];let y=x,t=x+5.5;t-=(x+.5)*Math.log(t);let s=1.000000000190015;for(const v of c)s+=v/++y;return -t+Math.log(2.5066282746310005*s/x)}
+function bcf(x,a,b){const T=1e-30;let qab=a+b,qap=a+1,qam=a-1,c=1,d=1-qab*x/qap;if(Math.abs(d)<T)d=T;d=1/d;let h=d;
+  for(let m=1;m<=300;m++){const m2=2*m;let aa=m*(b-m)*x/((qam+m2)*(a+m2));d=1+aa*d;if(Math.abs(d)<T)d=T;c=1+aa/c;if(Math.abs(c)<T)c=T;d=1/d;h*=d*c;
+  aa=-(a+m)*(qab+m)*x/((a+m2)*(qap+m2));d=1+aa*d;if(Math.abs(d)<T)d=T;c=1+aa/c;if(Math.abs(c)<T)c=T;d=1/d;const del=d*c;h*=del;if(Math.abs(del-1)<3e-12)break}return h}
+function ib(x,a,b){if(x<=0)return 0;if(x>=1)return 1;const bt=Math.exp(lg(a+b)-lg(a)-lg(b)+a*Math.log(x)+b*Math.log(1-x));return x<(a+1)/(a+b+2)?bt*bcf(x,a,b)/a:1-bt*bcf(1-x,b,a)/b}
+const pT=(tv,df)=>isFinite(tv)?ib(df/(df+tv*tv),df/2,.5):0;
+const pF=(F,d1,d2)=>isFinite(F)?ib(d2/(d2+d1*F),d2/2,d1/2):0;
+function tinv(df,alpha=.05){let lo=0,hi=1000;for(let i=0;i<80;i++){const m=(lo+hi)/2;pT(m,df)>alpha?lo=m:hi=m}return(lo+hi)/2}
+function qn(p){const a=[-39.69683028665376,220.9460984245205,-275.9285104469687,138.357751867269,-30.66479806614716,2.506628277459239],b=[-54.47609879822406,161.5858368580409,-155.6989798598866,66.80131188771972,-13.28068155288572],c=[-.007784894002430293,-.3223964580411365,-2.400758277161838,-2.549732539343734,4.374664141464968,2.938163982698783],d=[.007784695709041462,.3224671290700398,2.445134137142996,3.754408661907416],pl=.02425;let q,r;
+  if(p<pl){q=Math.sqrt(-2*Math.log(p));return(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1)}
+  if(p>1-pl){q=Math.sqrt(-2*Math.log(1-p));return-(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1)}
+  q=p-.5;r=q*q;return(((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q/(((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1)}
+function inv(M){const n=M.length,A=M.map((r,i)=>[...r,...Array.from({length:n},(_,j)=>+(i==j))]);
+  for(let i=0;i<n;i++){let p=i;for(let r=i+1;r<n;r++)if(Math.abs(A[r][i])>Math.abs(A[p][i]))p=r;if(Math.abs(A[p][i])<1e-12)return null;[A[i],A[p]]=[A[p],A[i]];
+  const d=A[i][i];A[i]=A[i].map(v=>v/d);for(let r=0;r<n;r++)if(r!=i){const f=A[r][i];A[r]=A[r].map((v,j)=>v-f*A[i][j])}}return A.map(r=>r.slice(n))}
+function pearson(x,y){const mx=mean(x),my=mean(y);let sxy=0,sxx=0,syy=0;x.forEach((v,i)=>{sxy+=(v-mx)*(y[i]-my);sxx+=(v-mx)**2;syy+=(y[i]-my)**2});return sxy/Math.sqrt(sxx*syy)}
+function ranks(a){const ix=a.map((v,i)=>[v,i]).sort((x,y)=>x[0]-y[0]),r=new Array(a.length);let i=0;while(i<ix.length){let j=i;while(j+1<ix.length&&ix[j+1][0]==ix[i][0])j++;const rk=(i+j)/2+1;for(let k=i;k<=j;k++)r[ix[k][1]]=rk;i=j+1}return r}
+function rP(r,n){if(Math.abs(r)>=1)return 0;return pT(r*Math.sqrt((n-2)/(1-r*r)),n-2)}
+function erfc(x){const z=Math.abs(x),q=1/(1+.5*z),r=q*Math.exp(-z*z-1.26551223+q*(1.00002368+q*(.37409196+q*(.09678418+q*(-.18628806+q*(.27886807+q*(-1.13520398+q*(1.48851587+q*(-.82215223+q*.17087277)))))))));return x>=0?r:2-r}
+const tgrp=a=>{const m=new Map();a.forEach(v=>m.set(v,(m.get(v)||0)+1));return[...m.values()]};
+function kendall(x,y){
+  const n=x.length;let C=0,D=0,tx=0,ty=0,txy=0;
+  for(let i=0;i<n-1;i++)for(let j=i+1;j<n;j++){const dx=Math.sign(x[i]-x[j]),dy=Math.sign(y[i]-y[j]),q=dx*dy;
+    if(q>0)C++;else if(q<0)D++;else if(dx==0&&dy==0)txy++;else if(dx==0)tx++;else ty++}
+  const n0=n*(n-1)/2,n1=tx+txy,n2=ty+txy,S=C-D,tauB=S/Math.sqrt((n0-n1)*(n0-n2)),tauA=S/n0;
+  const tg=tgrp(x),ug=tgrp(y),f=(g,fn)=>sum(g.map(fn));
+  const v0=n*(n-1)*(2*n+5),vt=f(tg,a=>a*(a-1)*(2*a+5)),vu=f(ug,a=>a*(a-1)*(2*a+5));
+  const t1=f(tg,a=>a*(a-1)),u1=f(ug,a=>a*(a-1)),t2=f(tg,a=>a*(a-1)*(a-2)),u2=f(ug,a=>a*(a-1)*(a-2));
+  const varS=(v0-vt-vu)/18+t1*u1/(2*n*(n-1))+(n>2?t2*u2/(9*n*(n-1)*(n-2)):0),z=S/Math.sqrt(varS);
+  return{r:tauB,tauA,C,D,tx,ty,txy,S,varS,z,p:erfc(Math.abs(z)/Math.SQRT2),n0};
+}
+function pairStat(x,y,n,m){
+  if(m=='kendall')return kendall(x,y);
+  const r=m=='spearman'?pearson(ranks(x),ranks(y)):pearson(x,y);
+  return{r,p:rP(r,n)};
+}
+function ciR(r,n,m){const need=m=='kendall'?4:3;if(n<=need||Math.abs(r)>=1)return[NaN,NaN];
+  const se=m=='kendall'?Math.sqrt(.437/(n-4)):m=='spearman'?Math.sqrt((1+r*r/2)/(n-3)):1/Math.sqrt(n-3),z=Math.atanh(r);return[Math.tanh(z-1.96*se),Math.tanh(z+1.96*se)]}
+const quant=(a,p)=>{const s=[...a].sort((x,y)=>x-y),n=s.length,pos=(n+1)*p;if(pos<=1)return s[0];if(pos>=n)return s[n-1];const lo=Math.floor(pos);return s[lo-1]+(pos-lo)*(s[lo]-s[lo-1])};
+const f3=(x,d=3)=>isFinite(x)?x.toFixed(d):'–';
+const fp=p=>isFinite(p)?(p<.0005?'.000':p.toFixed(3).replace(/^0/,'')):'–';
+const fr=r=>isFinite(r)?(r<0?'-':'')+Math.abs(r).toFixed(3).replace(/^0/,''):'–';
+const lvl=r=>{r=Math.abs(r);const a=t('lv5');return r>=.8?a[0]:r>=.6?a[1]:r>=.4?a[2]:r>=.2?a[3]:a[4]};
+const sgn=v=>v<0?'−':'+';
+
+/* ================= blocks ================= */
+function glos(keys){return `<details class="gl" open><summary>${t('glTitle')}</summary><ul>${keys.map(k=>`<li><b>${esc(G[lang][k][0])}</b> — ${G[lang][k][1]}</li>`).join('')}</ul></details>`}
+function blk(title,inner,gl,note){return `<div class="blk"><div class="cap">${title}</div><div class="wrap"><table class="spss" data-title="${esc(title)}">${inner}</table></div>${note?`<p class="note">${note}</p>`:''}${gl?glos(gl):''}</div>`}
+
+function descBlk(C,n,names,m='pearson'){
+  const tc=tinv(n-1);
+  const S=C.map(c=>{const mu=mean(c),s=sd(c),se=s/Math.sqrt(n),mn=Math.min(...c),mx=Math.max(...c),q1=quant(c,.25),q3=quant(c,.75);
+    return{N:n,Mean:mu,se,lo:mu-tc*se,hi:mu+tc*se,med:median(c),q1,q3,iqr:q3-q1,s,v:s*s,mn,mx,rg:mx-mn,sk:skew(c),ssk:n>2?seSk(n):NaN,ku:kurt(c),sku:n>3?seKu(n):NaN}});
+  const defs=[['N','N',0],['Mean','Mean'],['Std. Error of Mean','se'],['95% CI of Mean: Lower Bound','lo'],['95% CI of Mean: Upper Bound','hi'],['Median','med'],['Std. Deviation','s'],['Variance','v'],['Minimum','mn'],['Maximum','mx'],['Range','rg'],['Skewness','sk'],['Std. Error of Skewness','ssk'],['Kurtosis','ku'],['Std. Error of Kurtosis','sku']];
+  if(m!='pearson')defs.splice(6,0,['25th Percentile (Q1)','q1'],['75th Percentile (Q3)','q3'],['Interquartile Range (IQR)','iqr']);
+  const inner=`<tr><th>Statistic</th>${names.map(x=>`<th>${esc(x)}</th>`).join('')}</tr>`+defs.map(([lb,key,d])=>`<tr><td class="l">${lb}</td>${S.map(o=>`<td>${f3(o[key],d??3)}</td>`).join('')}</tr>`).join('');
+  return blk('Descriptive Statistics',inner,['n','mean','se','ci','median',...(m!='pearson'?['q']:[]),'sd','var','min','skew','kurt']);
+}
+
+function corrBlk(C,n,names,m='pearson'){
+  const k=C.length,R=C.map(()=>Array(k).fill(1)),P=C.map(()=>Array(k).fill(NaN)),ST=C.map(()=>Array(k).fill(null));
+  for(let i=0;i<k;i++)for(let j=i+1;j<k;j++){const s=pairStat(C[i],C[j],n,m);R[i][j]=R[j][i]=s.r;P[i][j]=P[j][i]=s.p;ST[i][j]=ST[j][i]=s}
+  const star=p=>p<.01?'**':p<.05?'*':'',pe=m=='pearson',rs=pe?4:3;
+  const ttl=pe?'Correlations':m=='spearman'?'Spearman rho Correlations':'Kendall tau-b Correlations',lab=pe?'Pearson Correlation':m=='spearman'?"Spearman's rho":"Kendall's tau_b";
+  let inner=`<tr><th></th><th></th>${names.map(c=>`<th>${esc(c)}</th>`).join('')}</tr>`;
+  names.forEach((c,i)=>{
+    inner+=`<tr><td class="l" rowspan="${rs}">${esc(c)}</td><td class="l">${lab}</td>${R[i].map((v,j)=>`<td>${i==j?'1':fr(v)+star(P[i][j])}</td>`).join('')}</tr>`;
+    inner+=`<tr><td class="l">Sig. (2-tailed)</td>${P[i].map((p,j)=>`<td>${i==j?'':fp(p)}</td>`).join('')}</tr>`;
+    if(pe)inner+=`<tr><td class="l">Covariance</td>${C.map(b=>`<td>${f3(cov(C[i],b))}</td>`).join('')}</tr>`;
+    inner+=`<tr><td class="l">N</td>${R[i].map(()=>`<td>${n}</td>`).join('')}</tr>`});
+  const gl=pe?['r','sig','cov','n']:m=='spearman'?['rho','sig','n']:['tauB','sigK','n'];
+  return{R,P,ST,html:blk(ttl,inner,gl,t('starNote'))};
+}
+
+/* ================= build ================= */
+function run(){
+  const data=[];
+  rows.forEach(r=>{const v=r.map(x=>x===''?NaN:Number(String(x).replace(/,/g,'')));if(v.every(isFinite))data.push(v)});
+  const k=cols.length,n=data.length;
+  if(n<3)return toast(t('tMin3'));
+  const C=cols.map((_,j)=>data.map(r=>r[j]));
+  if(C.some(c=>sd(c)==0))return toast(t('tSD0'));
+  last={C,n,names:cols.map((c,j)=>c||t('vr')+' '+(j+1)),mode,cm,dj:+$('dep').value,data};
+  if(!build())return;
+  $('res').style.display='block';$('res').scrollIntoView({behavior:'smooth'});
+}
+
+let charts=[];
+function build(){
+  const{C,n,names,dj}=last,md=last.mode,k=C.length;
+  let h=`<h2>${hTitle()}</h2>`+descBlk(C,n,names,md=='corr'?last.cm:'pearson');
+  charts=[];
+  if(md=='corr'){
+    const m=last.cm,pe=m=='pearson',cb=corrBlk(C,n,names,m),R=cb.R,P=cb.P,ST=cb.ST,sym=SY[m];
+    h+=cb.html;
+    let pr='',eq='',ints='',nsig=0,pairs=0;const pl=[],pv=[],pci=[],ps=[];
+    for(let i=0;i<k;i++)for(let j=i+1;j<k;j++){
+      pairs++;const r=R[i][j],p=P[i][j],A=esc(names[i]),B=esc(names[j]),s=ST[i][j],[lo,hi]=ciR(r,n,m),dec=p<.05?t('sigY'):t('sigN');
+      if(m=='kendall'){
+        pr+=`<tr><td class="l">${A} – ${B}</td><td>${fr(r)}</td><td>${fr(s.tauA)}</td><td class="l">${lvl(r)}</td><td>${s.C}</td><td>${s.D}</td><td>${s.tx}</td><td>${s.ty}</td><td>${s.txy}</td><td>${s.S}</td><td>${f3(Math.sqrt(s.varS),2)}</td><td>${f3(s.z)}</td><td>${fp(p)}</td><td>${fr(lo)}</td><td>${fr(hi)}</td><td class="l">${dec}</td></tr>`;
+      }else{
+        const tt=Math.abs(r)>=1?NaN:r/Math.sqrt((1-r*r)/(n-2));
+        pr+=`<tr><td class="l">${A} – ${B}</td><td>${fr(r)}</td><td>${f3(r*r)}</td><td class="l">${lvl(r)}</td><td>${f3(tt)}</td><td>${n-2}</td><td>${fp(p)}</td><td>${fr(lo)}</td><td>${fr(hi)}</td><td class="l">${dec}</td></tr>`;
+      }
+      if(pe){const sx=sd(C[i]),sy=sd(C[j]),b=r*sy/sx,a=mean(C[j])-b*mean(C[i]),see=sy*Math.sqrt((1-r*r)*(n-1)/(n-2)),seb=see/(sx*Math.sqrt(n-1));
+        eq+=`<tr><td class="l">${B} = ${f3(a)} ${sgn(b)} ${f3(Math.abs(b))}(${A})</td><td>${f3(a)}</td><td>${f3(b)}</td><td>${f3(seb)}</td><td>${f3(r*r)}</td><td>${f3(see)}</td><td>${fp(p)}</td></tr>`}
+      if(p<.05){nsig++;ints+=`<p>${t(pe?'corrPair':m=='spearman'?'corrPairS':'corrPairK',A,B,r,lvl(r),fr(r),fp(p),f3(r*r*100,1))}</p>`}
+      pl.push(`${names[i]} × ${names[j]}`);pv.push(r);pci.push(isFinite(lo)?[lo,hi]:null);ps.push(p<.05);
+    }
+    if(m=='kendall')h+=blk('Pairwise Kendall Tau Details',`<tr><th>Pair</th><th>Tau-b</th><th>Tau-a</th><th>Level</th><th>Concordant (C)</th><th>Discordant (D)</th><th>Ties X only</th><th>Ties Y only</th><th>Ties X&amp;Y</th><th>S = C − D</th><th>Std. Dev. of S</th><th>z</th><th>Sig. (2-tailed)</th><th>95% CI Lower</th><th>95% CI Upper</th><th>Decision</th></tr>${pr}`,['tauB','tauA','level','conc','tiesK','S','zK','sigK','citau','dec']);
+    else if(m=='spearman')h+=blk('Pairwise Spearman Details',`<tr><th>Pair</th><th>Spearman rho</th><th>rho²</th><th>Level</th><th>t</th><th>df</th><th>Sig. (2-tailed)</th><th>95% CI Lower</th><th>95% CI Upper</th><th>Decision</th></tr>${pr}`,['rho','rho2','level','trS','sig','cirho','dec']);
+    else h+=blk('Pairwise Correlation Details',`<tr><th>Pair</th><th>r</th><th>R²</th><th>Level</th><th>t</th><th>df</th><th>Sig. (2-tailed)</th><th>95% CI Lower</th><th>95% CI Upper</th><th>Decision</th></tr>${pr}`,['r','r2','level','tr','sig','cir','dec']);
+    if(pe)h+=blk('Simple Linear Regression per Pair',`<tr><th>Equation</th><th>a (Constant)</th><th>b (Slope)</th><th>Std. Error of b</th><th>R²</th><th>Std. Error of the Estimate</th><th>Sig.</th></tr>${eq}`,['a','b','seb','r2','seest','sig'],t('eqNote'));
+    h+=`<h2>${t('hExp')}</h2><div class="txt"><p>${t('corrIntro',n,k,pairs,m)}</p><p>${t('corrNote',m)}</p>${nsig?`<p>${t('corrSigN',nsig)}</p>${ints}`:`<p>${t('corrNone')}</p>`}<p>${t('corrCrit')}</p></div>`;
+    charts.push({id:'heatmap',title:t('cHeat')+' ('+sym[1]+')',hint:t('hHeat'),draw:()=>drawHeat('heatmap',names,R)});
+    charts.push({id:'scatter-matrix',title:t('cSplom'),hint:t(pe?'hSplom':'hSplomR'),draw:()=>splom('scatter-matrix',C,names,R,m)});
+    charts.push({id:'pairwise-r',title:t('cPairs',sym[0]),hint:t('hPairs'),draw:()=>hbar('pairwise-r',760,pl,pv,{min:-1,max:1,cis:pci,sig:ps,xl:sym[1]})});
+  }else{
+    const o=regOut(C,n,dj,names);if(o.err){toast(o.err);return false}
+    const cb=corrBlk(C,n,names);
+    h+=cb.html+o.html;
+    charts.push({id:'observed-vs-predicted',title:t('cObs'),hint:t('hObs'),draw:()=>plotXY('observed-vs-predicted',680,460,o.yh,o.y,{diag:1,title:o.eqPlain,sub:'R² = '+f3(o.R2),xl:t('aPred',o.Y),yl:t('aObs',o.Y)})});
+    charts.push({id:'residual-plot',title:t('cRes'),hint:t('hRes'),draw:()=>plotXY('residual-plot',680,460,o.yh,o.zr,{hz:[0,2,-2],title:t('cRes'),xl:t('aPred',o.Y),yl:t('aZres')})});
+    charts.push({id:'normal-qq',title:t('cQQ'),hint:t('hQQ'),draw:()=>{const s=[...o.zr].sort((a,b)=>a-b),th=s.map((_,i)=>qn((i+.5)/s.length));plotXY('normal-qq',680,460,th,s,{diag:1,title:t('cQQ'),xl:t('aTheo'),yl:t('aZres')})}});
+    charts.push({id:'residual-histogram',title:t('cHist'),hint:t('hHist'),draw:()=>histChart('residual-histogram',680,440,o.zr,t('cHist'))});
+    charts.push({id:'standardized-beta',title:t('cBeta'),hint:t('hBeta'),draw:()=>hbar('standardized-beta',760,o.xn,o.betas,{min:-Math.max(1,...o.betas.map(Math.abs))*1.1,max:Math.max(1,...o.betas.map(Math.abs))*1.1,sig:o.sigs,xl:t('aBeta')})});
+    charts.push({id:'heatmap',title:t('cHeat'),hint:t('hHeat'),draw:()=>drawHeat('heatmap',names,cb.R)});
+  }
+  $('out').innerHTML=h;
+  $('chartView').innerHTML=charts.map(c=>`<div class="chart"><div class="bar"><b>${esc(c.title)}</b><button class="sm" onclick="dlChart('${c.id}')">${t('dlPng')}</button></div><div class="wrap"><canvas id="${c.id}"></canvas></div><p class="note">${c.hint}</p></div>`).join('');
+  const go=()=>charts.forEach(c=>c.draw());go();
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(go);
+  return true;
+}
+
+const hTitle=()=>last.mode=='corr'?t('hCorr'+last.cm):t('hReg');
+function regOut(C,n,dj,names){
+  const xs=C.map((_,j)=>j).filter(j=>j!=dj),k=xs.length,p=k+1,y=C[dj];
+  if(n<=p)return{err:t('errN',n)};
+  const A=y.map((_,m)=>[1,...xs.map(j=>C[j][m])]);
+  const XtX=Array.from({length:p},(_,i)=>Array.from({length:p},(_,j)=>sum(A.map(r=>r[i]*r[j]))));
+  const Xty=Array.from({length:p},(_,i)=>sum(A.map((r,m)=>r[i]*y[m])));
+  const iv=inv(XtX);if(!iv)return{err:t('errCol')};
+  const b=iv.map(r=>sum(r.map((v,j)=>v*Xty[j])));
+  const yh=A.map(r=>sum(r.map((v,j)=>v*b[j]))),e=y.map((v,i)=>v-yh[i]);
+  const my=mean(y),sse=sum(e.map(v=>v*v)),sst=sum(y.map(v=>(v-my)**2)),ssr=sst-sse;
+  const dfe=n-p,mse=sse/dfe,msr=ssr/k,F=msr/mse,sigF=pF(F,k,dfe);
+  const R2=ssr/sst,adj=1-(1-R2)*(n-1)/dfe,se=Math.sqrt(mse),Rm=Math.sqrt(Math.max(0,R2));
+  let dwn=0;for(let i=1;i<n;i++)dwn+=(e[i]-e[i-1])**2;const dw=dwn/sse;
+  const zr=e.map(v=>v/se);
+  const Rx=xs.map(a=>xs.map(c=>a==c?1:pearson(C[a],C[c]))),Ri=k>1?inv(Rx):[[1]],tc=tinv(dfe);
+  const co=b.map((bv,i)=>{const s=Math.sqrt(mse*iv[i][i]),tv=bv/s,x=i?C[xs[i-1]]:null,vif=i&&Ri?Ri[i-1][i-1]:NaN;
+    return{b:bv,s,tv,p:pT(tv,dfe),lo:bv-tc*s,hi:bv+tc*s,beta:i?bv*sd(x)/sd(y):NaN,vif,tol:i?1/vif:NaN,zero:i?pearson(x,y):NaN,par:i?tv/Math.sqrt(tv*tv+dfe):NaN,part:i?tv*Math.sqrt((1-R2)/dfe):NaN}});
+  const Yr=names[dj],Y=esc(Yr),xn=xs.map(j=>names[j]);
+  let h='';
+  h+=blk('Variables Entered/Removed',`<tr><th>Model</th><th>Variables Entered</th><th>Method</th><th>Dependent Variable</th></tr><tr><td class="l">1</td><td class="l">${xn.map(esc).join(', ')}</td><td class="l">Enter</td><td class="l">${Y}</td></tr>`,['vent']);
+  h+=blk('Model Summary',`<tr><th>R</th><th>R Square</th><th>Adjusted R Square</th><th>Std. Error of the Estimate</th><th>Durbin-Watson</th><th>N</th></tr><tr><td>${f3(Rm)}</td><td>${f3(R2)}</td><td>${f3(adj)}</td><td>${f3(se)}</td><td>${f3(dw)}</td><td>${n}</td></tr>`,['R','R2m','adj','seest','dw'],`Predictors: (Constant), ${xn.map(esc).join(', ')}. Dependent Variable: ${Y}`);
+  h+=blk('ANOVA',`<tr><th>Model</th><th>Sum of Squares</th><th>df</th><th>Mean Square</th><th>F</th><th>Sig.</th></tr>
+  <tr><td class="l">Regression</td><td>${f3(ssr)}</td><td>${k}</td><td>${f3(msr)}</td><td>${f3(F)}</td><td>${fp(sigF)}</td></tr>
+  <tr><td class="l">Residual</td><td>${f3(sse)}</td><td>${dfe}</td><td>${f3(mse)}</td><td></td><td></td></tr>
+  <tr><td class="l">Total</td><td>${f3(sst)}</td><td>${n-1}</td><td></td><td></td><td></td></tr>`,['ss','df','ms','F','sigF'],`Dependent Variable: ${Y}`);
+  h+=blk('Coefficients',`<tr><th rowspan="2"></th><th colspan="2">Unstandardized Coefficients</th><th>Standardized Coefficients</th><th rowspan="2">t</th><th rowspan="2">Sig.</th><th colspan="2">95% CI for B</th><th colspan="3">Correlations</th><th colspan="2">Collinearity Statistics</th></tr>
+  <tr><th>B</th><th>Std. Error</th><th>Beta</th><th>Lower Bound</th><th>Upper Bound</th><th>Zero-order</th><th>Partial</th><th>Part</th><th>Tolerance</th><th>VIF</th></tr>`+
+  co.map((r,i)=>`<tr><td class="l">${i?esc(names[xs[i-1]]):'(Constant)'}</td><td>${f3(r.b)}</td><td>${f3(r.s)}</td><td>${i?fr(r.beta):''}</td><td>${f3(r.tv)}</td><td>${fp(r.p)}</td><td>${f3(r.lo)}</td><td>${f3(r.hi)}</td><td>${i?fr(r.zero):''}</td><td>${i?fr(r.par):''}</td><td>${i?fr(r.part):''}</td><td>${i?f3(r.tol):''}</td><td>${i?f3(r.vif,2):''}</td></tr>`).join(''),
+  ['B','seB','beta','tv','sigt','ciB','zero','partial','part','tol','vif'],`Dependent Variable: ${Y}`);
+  const rs=(lb,a)=>{const mn=Math.min(...a),mx=Math.max(...a),m=mean(a),s=sd(a);return `<tr><td class="l">${lb}</td><td>${f3(mn)}</td><td>${f3(mx)}</td><td>${f3(m)}</td><td>${f3(s)}</td><td>${n}</td></tr>`};
+  const sdh=sd(yh),zp=yh.map(v=>(v-mean(yh))/sdh);
+  h+=blk('Residuals Statistics',`<tr><th></th><th>Minimum</th><th>Maximum</th><th>Mean</th><th>Std. Deviation</th><th>N</th></tr>${rs('Predicted Value',yh)}${rs('Residual',e)}${rs('Std. Predicted Value',zp)}${rs('Std. Residual',zr)}`,['pred','resid','zpred','zres'],`Dependent Variable: ${Y}`);
+  const nOut=zr.filter(v=>Math.abs(v)>3).length;
+  h+=blk('Casewise Diagnostics',`<tr><th>Case Number</th><th>Observed ${Y}</th><th>Predicted Value</th><th>Residual</th><th>Std. Residual</th><th>Flag</th></tr>`+y.map((v,i)=>`<tr><td>${i+1}</td><td>${f3(v)}</td><td>${f3(yh[i])}</td><td>${f3(e[i])}</td><td>${f3(zr[i])}</td><td class="l">${Math.abs(zr[i])>3?t('outl'):''}</td></tr>`).join(''),['obs','zres']);
+  const eqPlain=`${Yr}̂ = ${f3(b[0])}`+xs.map((j,i)=>` ${sgn(b[i+1])} ${f3(Math.abs(b[i+1]))}(${names[j]})`).join('');
+  const zPlain=`Z${Yr}̂ = `+xs.map((j,i)=>{const bt=co[i+1].beta;return(i?(bt<0?' − ':' + '):(bt<0?'−':''))+f3(Math.abs(bt))+`(Z${names[j]})`}).join('');
+  h+=`<h2>${t('hEqs')}</h2><div class="eq"><b>${t('eqRaw')}</b> ${esc(eqPlain)}<br><b>${t('eqStd')}</b> ${esc(zPlain)}</div>`;
+  const sigs=co.slice(1).map(r=>r.p<.05),betas=co.slice(1).map(r=>r.beta);
+  const sigL=xs.map((j,i)=>({j,r:co[i+1]})).filter(o=>o.r.p<.05);
+  const top=xs.map((j,i)=>({j,r:co[i+1]})).sort((a,c)=>Math.abs(c.r.beta)-Math.abs(a.r.beta))[0];
+  h+=`<h2>${t('hExp')}</h2><div class="txt">
+  <p>${t('regModel',k,Y,sigF<.05,f3(F,2),dfe,fp(sigF))}</p>
+  <p>${t('regR',Y,f3(Rm),lvl(Rm),f3(R2),f3(R2*100,1),f3(adj))}</p>
+  <p>${t('regVarH')}${sigL.length?sigL.map(o=>t('regVar',esc(names[o.j]),Y,o.r.b>0,f3(o.r.b),fp(o.r.p),f3(Math.abs(o.r.b)))).join('; '):t('regNoVar')}</p>
+  <p>${t('regTop',esc(names[top.j]),fr(top.r.beta))}</p>
+  <p>• <b>Multicollinearity:</b> ${co.slice(1).some(r=>r.vif>10)?`<span class="err">${t('regVifBad')}</span>`:t('regVifOk')}</p>
+  <p>${t('regDW',f3(dw),dw>=1.5&&dw<=2.5)}</p>
+  ${nOut?`<p>${t('regOut',nOut)}</p>`:''}
+  ${n<10*k?`<p class="err">${t('regSmall',n,k)}</p>`:''}</div>`;
+  return{html:h,y,yh,zr,eqPlain,R2,Y:Yr,xn,betas,sigs};
+}
+
+/* ================= charts ================= */
+const INK='#1b2622',MUTE='#5d6b65',GRID='#d9e0dc',ACC='#0d6b5c',RED='#c0392b',GREY='#9aa7a1',F14='14px Sarabun,sans-serif',F12='12px Sarabun,sans-serif';
+function mk(id,W,H){const cv=$(id),d=2;cv.width=W*d;cv.height=H*d;cv.style.width=W+'px';cv.style.height='auto';cv.style.maxWidth='100%';const c=cv.getContext('2d');c.setTransform(d,0,0,d,0,0);c.fillStyle='#fff';c.fillRect(0,0,W,H);c.font=F14;c.fillStyle=INK;return c}
+function trim(c,s,w){if(c.measureText(s).width<=w)return s;while(s.length>1&&c.measureText(s+'…').width>w)s=s.slice(0,-1);return s+'…'}
+const tf=v=>Math.abs(v)>=100?v.toFixed(0):Math.abs(v)>=10?v.toFixed(1):v.toFixed(2);
+function frame(c,W,title,sub){let fs=15;c.font=`700 ${fs}px Sarabun,sans-serif`;while(c.measureText(title).width>W-24&&fs>9){fs--;c.font=`700 ${fs}px Sarabun,sans-serif`}
+  c.fillStyle=INK;c.textAlign='center';c.fillText(title,W/2,22);if(sub){c.font="13px Sarabun,sans-serif";c.fillStyle=MUTE;c.fillText(sub,W/2,44)}c.font=F14}
+function heatCol(v){const q=Math.max(-1,Math.min(1,v)),a=q<0?[44,110,190]:[205,70,55],m=Math.abs(q);return`rgb(${Math.round(255+(a[0]-255)*m)},${Math.round(255+(a[1]-255)*m)},${Math.round(255+(a[2]-255)*m)})`}
+function drawHeat(id,names,R){
+  const k=names.length,cell=Math.max(56,Math.min(90,520/k)),Lm=140,T=20,B=80,W=Lm+k*cell+90,H=T+k*cell+B,c=mk(id,W,H);c.textBaseline='middle';
+  R.forEach((row,i)=>{c.fillStyle=INK;c.textAlign='right';c.fillText(trim(c,names[i],Lm-14),Lm-8,T+i*cell+cell/2);
+    row.forEach((v,j)=>{c.fillStyle=heatCol(v);c.fillRect(Lm+j*cell,T+i*cell,cell-2,cell-2);c.fillStyle=Math.abs(v)>.6?'#fff':'#111';c.textAlign='center';c.fillText(i==j?'1':fr(v),Lm+j*cell+cell/2-1,T+i*cell+cell/2-1)})});
+  names.forEach((n,j)=>{c.save();c.translate(Lm+j*cell+cell/2,T+k*cell+8);c.rotate(Math.PI/6);c.fillStyle=INK;c.textAlign='left';c.fillText(trim(c,n,80),0,8);c.restore()});
+  const g=c.createLinearGradient(0,T,0,T+k*cell);g.addColorStop(0,heatCol(1));g.addColorStop(.5,heatCol(0));g.addColorStop(1,heatCol(-1));
+  const gx=Lm+k*cell+20;c.fillStyle=g;c.fillRect(gx,T,16,k*cell-2);c.fillStyle=INK;c.textAlign='left';c.fillText('+1',gx+22,T+8);c.fillText('0',gx+22,T+k*cell/2);c.fillText('−1',gx+22,T+k*cell-10);
+}
+function plotXY(id,W,H,xs,ys,o){
+  const c=mk(id,W,H),Lm=70,Rm=24,T=o.sub?62:44,B=60,pw=W-Lm-Rm,ph=H-T-B;
+  let a=Math.min(...xs),b=Math.max(...xs),e=Math.min(...ys),f=Math.max(...ys);
+  if(o.diag){a=e=Math.min(a,e);b=f=Math.max(b,f)}
+  if(o.hz){e=Math.min(e,...o.hz);f=Math.max(f,...o.hz)}
+  const px=(b-a)*.06||1,py=(f-e)*.06||1;a-=px;b+=px;e-=py;f+=py;
+  const X=v=>Lm+(v-a)/(b-a)*pw,Y=v=>T+ph-(v-e)/(f-e)*ph;
+  frame(c,W,o.title,o.sub);
+  c.strokeStyle=GRID;c.lineWidth=1;c.font=F12;c.fillStyle=MUTE;
+  for(let i=0;i<=5;i++){const vx=a+(b-a)*i/5,vy=e+(f-e)*i/5;
+    c.beginPath();c.moveTo(Lm,Y(vy));c.lineTo(W-Rm,Y(vy));c.stroke();c.beginPath();c.moveTo(X(vx),T);c.lineTo(X(vx),T+ph);c.stroke();
+    c.textAlign='right';c.fillText(tf(vy),Lm-6,Y(vy)+4);c.textAlign='center';c.fillText(tf(vx),X(vx),T+ph+16)}
+  c.strokeStyle=INK;c.strokeRect(Lm,T,pw,ph);
+  if(o.diag){c.strokeStyle=ACC;c.lineWidth=2;c.beginPath();c.moveTo(X(a),Y(a));c.lineTo(X(b),Y(b));c.stroke()}
+  (o.hz||[]).forEach(v=>{c.strokeStyle=v==0?INK:GREY;c.lineWidth=v==0?1.5:1;c.setLineDash(v==0?[]:[6,4]);c.beginPath();c.moveTo(Lm,Y(v));c.lineTo(W-Rm,Y(v));c.stroke()});c.setLineDash([]);
+  c.fillStyle='rgba(192,57,43,.75)';xs.forEach((v,i)=>{c.beginPath();c.arc(X(v),Y(ys[i]),4.5,0,7);c.fill()});
+  c.fillStyle=INK;c.font=F14;c.textAlign='center';c.fillText(o.xl,Lm+pw/2,H-12);
+  c.save();c.translate(16,T+ph/2);c.rotate(-Math.PI/2);c.fillText(o.yl,0,0);c.restore();
+}
+function bins(a,nb){const lo=Math.min(...a),hi=Math.max(...a),w=(hi-lo)/nb||1,cnt=Array(nb).fill(0);a.forEach(v=>{cnt[Math.min(nb-1,Math.floor((v-lo)/w))]++});return{lo,w,cnt}}
+function histChart(id,W,H,a,title){
+  const n=a.length,nb=Math.max(5,Math.ceil(Math.log2(n)+1)),{lo,w,cnt}=bins(a,nb),m=mean(a),s=sd(a),pk=n*w/(s*Math.sqrt(2*Math.PI));
+  const c=mk(id,W,H),Lm=64,Rm=24,T=44,B=58,pw=W-Lm-Rm,ph=H-T-B,ymax=Math.max(Math.max(...cnt),pk)*1.15;
+  const X=v=>Lm+(v-lo)/(w*nb)*pw,Y=v=>T+ph-v/ymax*ph;
+  frame(c,W,title);c.font=F12;c.fillStyle=MUTE;c.strokeStyle=GRID;
+  for(let i=0;i<=5;i++){const v=ymax*i/5;c.beginPath();c.moveTo(Lm,Y(v));c.lineTo(W-Rm,Y(v));c.stroke();c.textAlign='right';c.fillText(v.toFixed(ymax<10?1:0),Lm-6,Y(v)+4)}
+  cnt.forEach((v,i)=>{c.fillStyle='rgba(13,107,92,.6)';c.fillRect(X(lo+i*w),Y(v),pw/nb-1,T+ph-Y(v));c.strokeStyle=ACC;c.strokeRect(X(lo+i*w),Y(v),pw/nb-1,T+ph-Y(v))});
+  c.fillStyle=MUTE;c.textAlign='center';for(let i=0;i<=nb;i+=Math.ceil(nb/6))c.fillText(tf(lo+i*w),X(lo+i*w),T+ph+16);
+  c.strokeStyle=RED;c.lineWidth=2;c.beginPath();for(let i=0;i<=100;i++){const v=lo+w*nb*i/100,d=n*w*Math.exp(-(((v-m)/s)**2)/2)/(s*Math.sqrt(2*Math.PI));i?c.lineTo(X(v),Y(d)):c.moveTo(X(v),Y(d))}c.stroke();
+  c.strokeStyle=INK;c.lineWidth=1;c.strokeRect(Lm,T,pw,ph);
+  c.fillStyle=INK;c.font=F14;c.textAlign='center';c.fillText(t('aZres'),Lm+pw/2,H-12);c.save();c.translate(16,T+ph/2);c.rotate(-Math.PI/2);c.fillText(t('aFreq'),0,0);c.restore();
+}
+function hbar(id,W,labels,vals,o){
+  const rh=32,Lm=210,Rm=56,T=40,B=48,H=T+B+labels.length*rh,c=mk(id,W,H),pw=W-Lm-Rm,X=v=>Lm+(v-o.min)/(o.max-o.min)*pw;
+  c.font=F12;c.strokeStyle=GRID;c.fillStyle=MUTE;
+  for(let i=0;i<=4;i++){const v=o.min+(o.max-o.min)*i/4;c.beginPath();c.moveTo(X(v),T);c.lineTo(X(v),T+labels.length*rh);c.stroke();c.textAlign='center';c.fillText(v.toFixed(2),X(v),T+labels.length*rh+16)}
+  c.strokeStyle=INK;c.lineWidth=1.5;c.beginPath();c.moveTo(X(0),T);c.lineTo(X(0),T+labels.length*rh);c.stroke();c.lineWidth=1;
+  labels.forEach((lb,i)=>{const y=T+i*rh,v=vals[i],ci=o.cis&&o.cis[i];
+    c.fillStyle=o.sig[i]?ACC:GREY;c.fillRect(Math.min(X(0),X(v)),y+6,Math.abs(X(v)-X(0)),rh-12);
+    let ext=v;if(ci){c.strokeStyle=INK;c.beginPath();c.moveTo(X(ci[0]),y+rh/2);c.lineTo(X(ci[1]),y+rh/2);c.moveTo(X(ci[0]),y+9);c.lineTo(X(ci[0]),y+rh-9);c.moveTo(X(ci[1]),y+9);c.lineTo(X(ci[1]),y+rh-9);c.stroke();ext=v>=0?Math.max(v,ci[1]):Math.min(v,ci[0])}
+    c.fillStyle=INK;c.font=F12;c.textAlign=v>=0?'left':'right';c.fillText(fr(v),X(ext)+(v>=0?6:-6),y+rh/2+4);
+    c.font=F14;c.textAlign='right';c.fillText(trim(c,lb,Lm-14),Lm-8,y+rh/2+5)});
+  c.fillStyle=INK;c.font=F14;c.textAlign='center';c.fillText(o.xl,Lm+pw/2,H-10);
+}
+function splom(id,C,names,R,m='pearson'){
+  const k=C.length,cs=k<=4?170:k<=6?130:100,M=10,W=M*2+k*cs,H=M*2+k*cs,c=mk(id,W,H),D=m=='pearson'?C:C.map(ranks),sy=SY[m][0];
+  const rg=D.map(a=>{const lo=Math.min(...a),hi=Math.max(...a),p=(hi-lo)*.06||1;return[lo-p,hi+p]});
+  for(let i=0;i<k;i++)for(let j=0;j<k;j++){
+    const bx=M+j*cs+3,by=M+i*cs+3,bw=cs-6,bh=cs-6;
+    c.strokeStyle=GRID;c.lineWidth=1;c.strokeRect(bx,by,bw,bh);
+    if(i==j){const nb=Math.max(5,Math.ceil(Math.log2(C[i].length)+1)),{cnt}=bins(C[i],nb),mx=Math.max(...cnt);
+      cnt.forEach((v,q)=>{const x=bx+q*bw/nb,hh=v/mx*(bh-30);c.fillStyle='rgba(13,107,92,.55)';c.fillRect(x,by+bh-hh,bw/nb-1,hh)});
+      c.fillStyle=INK;c.font="700 12px Sarabun,sans-serif";c.textAlign='center';c.fillText(trim(c,names[i],bw-8),bx+bw/2,by+16)}
+    else{const X=v=>bx+(v-rg[j][0])/(rg[j][1]-rg[j][0])*bw,Y=v=>by+bh-(v-rg[i][0])/(rg[i][1]-rg[i][0])*bh,r=R[i][j];
+      c.fillStyle='rgba(192,57,43,.7)';D[j].forEach((v,q)=>{c.beginPath();c.arc(X(v),Y(D[i][q]),2.4,0,7);c.fill()});
+      if(m!='kendall'){const rr=pearson(D[i],D[j]),sl=rr*sd(D[i])/sd(D[j]),ic=mean(D[i])-sl*mean(D[j]),x0=rg[j][0],x1=rg[j][1];
+        c.save();c.beginPath();c.rect(bx,by,bw,bh);c.clip();c.strokeStyle=ACC;c.lineWidth=1.8;c.beginPath();c.moveTo(X(x0),Y(ic+sl*x0));c.lineTo(X(x1),Y(ic+sl*x1));c.stroke();c.restore()}
+      c.fillStyle=INK;c.font="700 11px Sarabun,sans-serif";c.textAlign='left';c.fillText(sy+' = '+fr(r),bx+5,by+13)}
+  }
+}
+function dlChart(id){$(id).toBlob(b=>saveFile(id+'.png',b),'image/png')}
+
+/* ================= export ================= */
+async function saveFile(name,blob){
+  try{const d=await claude.use('downloads');
+    if(d){await d.save({filename:name,data:blob});return toast(t('tSaved'))}}catch(e){if(e&&e.code=='declined')return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();
+}
+function saveXLSX(){
+  if(!last)return;
+  try{
+    const wb=XLSX.utils.book_new();
+    document.querySelectorAll('#out table.spss').forEach((tb,i)=>{
+      const ws=XLSX.utils.table_to_sheet(tb);
+      XLSX.utils.book_append_sheet(wb,ws,((i+1)+' '+(tb.dataset.title||'Sheet')).replace(/[\\\/?*\[\]:]/g,'').slice(0,31));
+    });
+    const eq=document.querySelector('#out .eq');
+    if(eq)XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(eq.innerText.split('\n').map(s=>[s.trim()]).filter(r=>r[0])),'Equations');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([last.names,...last.data]),'Data');
+    const out=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+    saveFile('analysis-tables.xlsx',new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+  }catch(e){toast(t('tFail'))}
+}
+async function saveDOC(){
+  try{
+    toast(t('tWait'));
+    const cv=await html2canvas($('out'),{scale:2,backgroundColor:getComputedStyle(document.documentElement).getPropertyValue('--card').trim()||'#fff'});
+    const{Document,Packer,Paragraph,ImageRun,TextRun}=docx,sliceH=Math.round(cv.width*1.32),kids=[new Paragraph({children:[new TextRun({text:hTitle(),bold:true,size:32})]})];
+    for(let y=0;y<cv.height;y+=sliceH){const h=Math.min(sliceH,cv.height-y),s=document.createElement('canvas');s.width=cv.width;s.height=h;s.getContext('2d').drawImage(cv,0,y,cv.width,h,0,0,cv.width,h);
+      const bin=atob(s.toDataURL('image/png').split(',')[1]),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
+      kids.push(new Paragraph({children:[new ImageRun({data:u,type:'png',transformation:{width:600,height:Math.round(600*h/cv.width)}})]}))}
+    const doc=new Document({sections:[{properties:{page:{margin:{top:900,bottom:900,left:900,right:900}}},children:kids}]});
+    saveFile('analysis-result.docx',await Packer.toBlob(doc));
+  }catch(e){toast(t('tFail'))}
+}
+
+$('tbl').addEventListener('paste',e=>{
+  const raw=(e.clipboardData||window.clipboardData).getData('text').replace(/\r/g,'').replace(/\n+$/,'');
+  if(!/[\t\n]/.test(raw))return;
+  e.preventDefault();
+  const cell=e.target.closest('th,td'),c0=cell.cellIndex-1,r0=cell.parentElement.rowIndex-1;
+  raw.split('\n').forEach((line,li)=>line.split('\t').forEach((v,ci)=>{
+    const r=r0+li,c=c0+ci;
+    while(c>=cols.length){cols.push('X'+(cols.length+1));rows.forEach(x=>x.push(''))}
+    if(r<0){cols[c]=v.trim()||cols[c];return}
+    while(rows.length<=r)rows.push(cols.map(()=>''));
+    rows[r][c]=v.trim();
+  }));
+  render();toast(t('tPaste'));
+});
+init();setLang('th');
+</script>
+</body>
+</html>
